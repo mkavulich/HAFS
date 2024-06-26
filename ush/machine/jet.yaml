@@ -1,0 +1,5 @@
+platform:
+  WORKFLOW_MANAGER: rocoto
+  SCHED: slurm
+  PARTITION_DEFAULT: sjet,vjet,kjet,xjet
+  QUEUE_DEFAULT: batch

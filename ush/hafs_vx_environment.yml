@@ -1,4 +1,4 @@
-name: hafs
+name: hafs_vx
 channels:
   - conda-forge
   - ufs-community

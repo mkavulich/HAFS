@@ -1,0 +1,283 @@
+#----------------------------
+# Test description
+#----------------------------
+metadata:
+  description: >-
+    Default configuration for an experiment. The valid values for most of the
+    parameters are specified in valid_param_vals.yaml
+#----------------------------
+# USER config parameters
+#----------------------------
+user:
+  #
+  #-----------------------------------------------------------------------
+  #
+  # Set machine and queue parameters.  Definitions:
+  #
+  # MACHINE:
+  # Machine on which the workflow will run.
+  # Please see ush/valid_param_vals.yaml for a full list of supported
+  # platforms.
+  #
+  # ACCOUNT:
+  # The account under which to submit jobs to the queue.
+  #
+  # HOMEdir: 
+  # The path to the user's HAFS clone.
+  #
+  # USHdir: 
+  # The path to the user's ush directory in their HAFS clone. 
+  # 
+  # SCRIPTSdir: 
+  # The path to the user's scripts directory in their HAFS clone. Is set to
+  # ${USHdir}/metplus by default
+  # 
+  # PARMdir: 
+  # The path to the user's parm directory in their HAFS clone.
+  # 
+  # MODULESdir: 
+  # The path to the user's modulefiles directory in their HAFS clone.
+  # 
+  # METPLUS_CONF: 
+  # The path to the user's final METplus configuration file. By default, 
+  # METplus configuration files reside in HAFS/parm/metplus.
+  #  
+  #-----------------------------------------------------------------------
+  MACHINE: "BIG_COMPUTER"
+  ACCOUNT: ""
+  HOMEdir: ''
+  USHdir: '{{ [user.HOMEdir, "ush"]|path_join }}'
+  SCRIPTSdir: '{{ [USHdir, "scripts"]|path_join }}'
+  PARMdir: '{{ [HOMEdir, "parm"]|path_join }}'
+  MODULESdir: '{{ [HOMEdir, "modulefiles", "met_vx"]|path_join }}'
+  METPLUS_CONF: '{{ [PARMdir, "metplus"]|path_join }}'
+
+#----------------------------
+# PLATFORM config parameters
+#-----------------------------
+platform:
+  #
+  #-----------------------------------------------------------------------
+  #
+  # NCORES_PER_NODE:
+  # The number of cores available per node on the compute platform, now 
+  # configurable for all platforms.
+  #
+  # TASKTHROTTLE:
+  # The number of active tasks run simultaneously.
+  #
+  # MODULEFILE
+  # Filename for the module file to load. Is set automatically for supported machines.
+  #
+  # SCHED:
+  # The job scheduler to use (e.g., Slurm). Set this to an empty string in
+  # order for the experiment generation script to set it depending on the
+  # machine.
+  #
+  # PARTITION_DEFAULT:
+  # If using the slurm job scheduler (i.e. if SCHED is set to "slurm"), the
+  # default partition to which to submit workflow tasks. If this is not set or
+  # is set to an empty string, it will be (re)set to a machine-dependent
+  # value.  This is not used if SCHED is not set to "slurm".
+  #
+  # QUEUE_DEFAULT:
+  # The default queue or QOS (if using the slurm job scheduler, where QOS
+  # is Quality of Service) to which workflow tasks are submitted. If this is
+  # not set or is set to an empty string, it will be (re)set to a machine-
+  # dependent value.
+  #
+  # PARTITION_FCST:
+  # If using the slurm job scheduler (i.e. if SCHED is set to "slurm"), 
+  # The task that runs forecasts is submitted to this partition.  If 
+  # this is not set or set to an empty string, it will be (re)set to a 
+  # machine-dependent value.  This is not used if SCHED is not set to 
+  # "slurm".
+  #
+  # QUEUE_FCST:
+  # The task that runs a forecast is submitted to this queue or QOS.  
+  # If this is not set or set to an empty string, it will be (re)set to a 
+  # machine-dependent value.
+  #-----------------------------------------------------------------------
+  #
+  NCORES_PER_NODE: ""
+  TASKTHROTTLE: 1000
+  MODULEFILE: 'vx_{{ user.MACHINE|lower() }}'
+  SCHED: ""
+  PARTITION_DEFAULT: ""
+  QUEUE_DEFAULT: ""
+  PARTITION_FCST: ""
+  QUEUE_FCST: ""
+
+#-----------------------------
+# WORKFLOW config parameters
+#-----------------------------
+workflow:
+  #
+  #-----------------------------------------------------------------------
+  #
+  # Unique ID for workflow run that will be set in setup.py
+  #
+  #-----------------------------------------------------------------------
+  #
+  WORKFLOW_ID: !nowtimestamp ''
+  #
+  #
+  #-----------------------------------------------------------------------
+  #
+  # Set cron-associated parameters.  Definitions:
+  #
+  # LOAD_MODULES_RUN_TASK_FP: 
+  # Path to load_modules_run_task.sh.
+  #-----------------------------------------------------------------------
+  #
+  LOAD_MODULES_RUN_TASK_FP: '{{ [user.USHdir, "load_modules_run_task.sh"]|path_join }}'
+
+  #
+  #-----------------------------------------------------------------------
+  #
+  # Set directories.  Definitions:
+  #
+  # EXPTDIR:
+  # The full path to the experiment directory.
+  #-----------------------------------------------------------------------
+  #
+  EXPTDIR: '.'
+  #
+  #-----------------------------------------------------------------------
+  #
+  # Set file names.  Definitions:
+  #
+  # VX_CONFIG_FN:
+  # Name of the user-specified configuration file for the forecast experiment.
+  #
+  #-----------------------------------------------------------------------
+  #
+  VX_CONFIG_FN: "config_vx.yaml"
+  
+  # 
+  #-----------------------------------------------------------------------
+  # These are staged in the exptdir at configuration time
+  # 
+  # VX_XML_FN:
+  # Name of the rocoto workflow XML file that the experiment generation
+  # script creates and that defines the workflow for the experiment.
+  #
+  # VAR_DEFNS_FN:
+  # Name of file (yaml format) containing the definitions of the variables used
+  # by the verification workflow. This is created when generate_vx_workflow.py is
+  # run, as a combination of default settings (config_defaults.yaml), machine-
+  # specific settings (in the directory ush/machine) and user settings specified
+  # in VX_CONFIG_FN. This file will be read by all verification tasks as the sole
+  # source of variable definitions, outside of those set in ROCOTO_YAML_FN.
+  #
+  # ROCOTO_YAML_FN:
+  # Name of the YAML file containing the YAML workflow definition from
+  # which the Rocoto XML file is created.
+  #
+  # WFLOW_LAUNCH_SCRIPT_FN:
+  # Name of the script that can be used to (re)launch the experiment's rocoto
+  # workflow.
+  #
+  # WFLOW_LAUNCH_LOG_FN:
+  # Name of the log file that contains the output from successive calls to
+  # the workflow launch script (WFLOW_LAUNCH_SCRIPT_FN).
+  #
+  # VAR_DEFNS_FP: 
+  # Path to the location of the variable definition file (VAR_DEFNS_FN).
+  #
+  # ROCOTO_YAML_FP: 
+  # Path to the location of the Rocoto YAML configuration file (ROCOTO_YAML_FN).
+  #
+  # WFLOW_LAUNCH_SCRIPT_FP:
+  # Path to the workflow launch script 
+  # (WFLOW_LAUNCH_SCRIPT_FN) in the experiment directory. 
+  #
+  # WFLOW_LAUNCH_LOG_FP: 
+  # Path to the log file (WFLOW_LAUNCH_LOG_FN) in 
+  # the experiment directory that contains output from successive 
+  # calls to the workflow launch script. 
+  # 
+  #-----------------------------------------------------------------------
+  #
+  VX_XML_FN: "hafs_vx.xml"
+  VAR_DEFNS_FN: "var_defns.sh"
+  ROCOTO_YAML_FN: "rocoto_defns.yaml"
+  WFLOW_LAUNCH_SCRIPT_FN: "launch_hafs_vx_wflow.sh"
+  WFLOW_LAUNCH_LOG_FN: "log.launch_hafs_vx_wflow"
+
+  VAR_DEFNS_FP: '{{ [EXPTDIR, VAR_DEFNS_FN] |path_join }}'
+  ROCOTO_YAML_FP: '{{ [EXPTDIR, ROCOTO_YAML_FN] |path_join }}'
+  WFLOW_LAUNCH_SCRIPT_FP: '{{ [user.USHdir, WFLOW_LAUNCH_SCRIPT_FN] |path_join }}'
+  WFLOW_LAUNCH_LOG_FP: '{{ [EXPTDIR, WFLOW_LAUNCH_LOG_FN] |path_join }}'
+
+  #
+  #-----------------------------------------------------------------------
+  #
+  # Set cron-associated parameters.  Definitions:
+  #
+  # USE_CRON_TO_RELAUNCH:
+  # Flag that determines whether to add a line to the user's cron 
+  # table to call the experiment launch script every CRON_RELAUNCH_INTVL_MNTS 
+  # minutes.
+  #
+  # CRON_RELAUNCH_INTVL_MNTS:
+  # The interval (in minutes) between successive calls of the experiment
+  # launch script by a cron job to (re)launch the experiment (so that the
+  # workflow for the experiment kicks off where it left off).
+  #
+  # CRONTAB_LINE: 
+  # The launch command that will appear in the crontab
+  #
+  # LOAD_MODULES_RUN_TASK_FP: 
+  # Path to load_modules_run_task.sh.
+  #-----------------------------------------------------------------------
+  #
+  USE_CRON_TO_RELAUNCH: false
+  CRON_RELAUNCH_INTVL_MNTS: 3
+  CRONTAB_LINE: ""
+  LOAD_MODULES_RUN_TASK_FP: '{{ [user.USHdir, "load_modules_run_task.sh"]|path_join }}'
+
+#----------------------------
+# verification (vx) parameters
+#-----------------------------
+verification:
+  #
+  # METPLUS_VERBOSITY_LEVEL: 
+  # Logging verbosity level used by METplus verification tools.  0 to 5,
+  # with 0 quiet and 5 loud.  
+  # 
+  METPLUS_VERBOSITY_LEVEL: 2
+  # VX_FCST_MODEL_NAME:
+  # String that specifies a descriptive name for the model being verified.
+  # This is used in forming the names of the verification output files as
+  # well as in the contents of those files.
+  #
+  VX_FCST_MODEL_NAME: 'HAFS'
+  #
+  # VX_FCST_INPUT_BASEDIR:
+  # Template for top-level directory containing forecast (but not obs)
+  # files that will be used as input into METplus for verification.
+  #
+  # VX_OUTPUT_BASEDIR:
+  # Template for top-level directory in which METplus will place its
+  # output.
+  #
+  VX_FCST_INPUT_BASEDIR: '{{ workflow.EXPTDIR }}'
+  VX_OUTPUT_BASEDIR: '{{ workflow.EXPTDIR }}'
+  #
+  # File name and path templates used in the verification tasks.
+  #
+  # FCST_FN_TEMPLATE:
+  # Template for the names of the forecast files that are inputs to the
+  # verification tasks.
+  # 
+  FCST_FN_TEMPLATE: 'hafs.t{init?fmt=%H?shift=-${time_lag}}z.prslev.f{lead?fmt=%HHH?shift=${time_lag}}.grib2'
+  #
+
+rocoto:
+  attrs: ""
+  cycledefs: ""
+  entities: ""
+  log: ""
+  tasks:
+    taskgroups: ""

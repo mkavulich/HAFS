@@ -1,0 +1,29 @@
+default_task_verify_pre: &default_task_verify_pre
+  account: '&ACCOUNT;'
+  attrs:
+    cycledefs: forecast
+    maxtries: '1'
+  envars: &default_vars
+    GLOBAL_VAR_DEFNS_FP: '&GLOBAL_VAR_DEFNS_FP;'
+    USHdir: '&USHdir;'
+    PDY: !cycstr '@Y@m@d'
+    cyc: !cycstr "@H"
+    subcyc: !cycstr "@M"
+    LOGDIR: !cycstr "&LOGDIR;"
+    nprocs: '{{ parent.nnodes * parent.ppn }}'
+  join: !cycstr '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'
+  memory: '{% if user.MACHINE not in ["NOAACLOUD"] %}{{ "2G" }}{% endif %}'
+  native: '{{ platform.SCHED_NATIVE_CMD }}'
+  nnodes: 1
+  nodes: '{{ nnodes }}:ppn={{ ppn }}'
+  partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
+  ppn: 1
+  queue: '&QUEUE_DEFAULT;'
+  walltime: 00:30:00
+
+task_tcpairs:
+  <<: *default_task_verify_pre
+  command: '&LOAD_MODULES_RUN_TASK_FP; "&SCRIPTSdir;/run_tcpairs.py"'
+  envars:
+    <<: *default_vars
+    METPLUSTOOLNAME: 'TCPAIRS'
