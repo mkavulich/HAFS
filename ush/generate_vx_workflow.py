@@ -9,14 +9,18 @@ import copy
 import logging
 import os
 import shutil
+import sys
 
 from textwrap import dedent
 
 import yaml
 
+from get_crontab_contents import add_crontab_line
 from python_utils import (
     cfg_to_yaml_str,
     check_structure_dict,
+    check_for_preexist_dir_file,
+    create_symlink,
     extend_yaml,
     flatten_dict,
     load_config_file,
@@ -24,7 +28,8 @@ from python_utils import (
     update_dict
 )
 
-from uwtools.api.template import render
+from uwtools.api.template import render 
+from uwtools.api.config import get_yaml_config
 
 def generate_vx_workflow(vx_config):
     """Function to generate the rocoto XML for running verification with METplus in the HAFS app.
@@ -33,6 +38,36 @@ def generate_vx_workflow(vx_config):
 
     Args:
     """
+
+    # First of all, expand experiment directory if necessary, then create path
+    vx_config["workflow"].update({ "EXPTDIR": os.path.abspath(vx_config["workflow"].get("EXPTDIR")) })
+    exptdir = vx_config["workflow"].get("EXPTDIR")
+    preexisting_dir_method = vx_config["workflow"].get("PREEXISTING_DIR_METHOD")
+    try:
+        check_for_preexist_dir_file(exptdir, preexisting_dir_method)
+    except ValueError:
+        logger.exception(
+            f"""
+            Check that the following values are valid:
+            EXPTDIR {exptdir}
+            PREEXISTING_DIR_METHOD {preexisting_dir_method}
+            """
+        )
+        raise
+    except FileExistsError:
+        errmsg = dedent(
+            f"""
+            EXPTDIR ({exptdir}) already exists, and PREEXISTING_DIR_METHOD = {preexisting_dir_method}
+
+            To ignore this error, delete the directory, or set 
+            PREEXISTING_DIR_METHOD = delete, or
+            PREEXISTING_DIR_METHOD = rename
+            in your config file.
+            """
+        )
+        raise FileExistsError(errmsg) from None
+
+    os.mkdir(exptdir)
 
     # Set the full path to the rocoto workflow xml file for verification. 
     vx_xml_fn = vx_config["workflow"]["VX_XML_FN"]
@@ -45,34 +80,39 @@ def generate_vx_workflow(vx_config):
         vx_config["user"]["PARMdir"],
         vx_xml_fn,
     )
-    # Call uwtools "render" to generate XML from template
-    rocoto_yaml_fp = vx_config["workflow"]["ROCOTO_YAML_FP"]
-    render(
-        input_file = template_xml_fp,
-        output_file = vx_xml_fp,
-        values_src = rocoto_yaml_fp,
-        )
 
     # Create a symlink in the experiment directory that points to the workflow
-    # launch script.
-    exptdir = vx_config["workflow"]["EXPTDIR"]
+    # launch script, and the utility needed to read the var_defns file from bash
     wflow_launch_script_fp = vx_config["workflow"]["WFLOW_LAUNCH_SCRIPT_FP"]
     wflow_launch_script_fn = vx_config["workflow"]["WFLOW_LAUNCH_SCRIPT_FN"]
-#    os.symlink(wflow_launch_script_fp, os.path.join(exptdir, wflow_launch_script_fn))
+    create_symlink(wflow_launch_script_fp, os.path.join(exptdir, wflow_launch_script_fn))
+    create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
+
+    # Create a symlink in the experiment directory that p
 
     # Expand all references to other variables and populate jinja templates
-    extend_yaml(vx_config)
-    for sect, sect_keys in vx_config.items():
-        for k, v in sect_keys.items():
-            vx_config[sect][k] = str_to_list(v)
-    extend_yaml(vx_config)
+    vx_config = get_yaml_config(vx_config)
+    vx_config.dereference()
 
-    # Write the Rocoto XML file for the verification workflow
+    # Write the Rocoto yaml file for the verification workflow
     rocoto_yaml_fp = vx_config["workflow"]["ROCOTO_YAML_FP"]
     with open(rocoto_yaml_fp, 'w') as f:
         yaml.Dumper.ignore_aliases = lambda *args : True
         yaml.dump(vx_config.get("rocoto"), f, sort_keys=False)
 
+
+    # Call uwtools "render" to generate Rocoto XML from yaml template
+    logging.debug("Calling uwtools 'render' to generate Rocoto XML from yaml template")
+    logging.debug("render(input_file = template_xml_fp,output_file = vx_xml_fp,values_src = rocoto_yaml_fp)")
+    rocoto_yaml_fp = vx_config["workflow"]["ROCOTO_YAML_FP"]
+    logging.debug(f"{template_xml_fp=}")
+    logging.debug(f"{vx_xml_fp=}")
+    logging.debug(f"{rocoto_yaml_fp=}")
+    render(
+        input_file = template_xml_fp,
+        output_file = vx_xml_fp,
+        values_src = rocoto_yaml_fp,
+        )
 
     # Write the variable definitions file
     all_lines = cfg_to_yaml_str(vx_config)
@@ -84,7 +124,7 @@ def generate_vx_workflow(vx_config):
 
     # To have a record of how this experiment/workflow was generated, copy
     # the user configuration file to the experiment directory.
-#    shutil.copy(os.path.join(vx_config["user"]["USHdir"], config["workflow"]["VX_CONFIG_FN"]), vx_config["workflow"]["EXPTDIR"])
+    shutil.copy(os.path.join(vx_config["user"]["USHdir"], config["workflow"]["VX_CONFIG_FN"]), vx_config["workflow"]["EXPTDIR"])
 
     # For convenience, print out the commands that need to be issued on the
     # command line in order to launch the workflow and to check its status.
@@ -178,7 +218,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
         raise Exception(errmsg)
 
     # Mandatory variables *must* be set in the user's config; the default value is invalid
-    mandatory = ["user.MACHINE", "user.ACCOUNT"]
+    mandatory = ["user.MACHINE", "user.ACCOUNT", "hafs.DATE_FIRST_CYCL"]
     for val in mandatory:
         sect, key = val.split(".")
         user_setting = cfg_u.get(sect, {}).get(key)
@@ -329,21 +369,27 @@ def validate_config(config):
     return config
 
 
-def add_workflow_to_cron(config):
+def add_workflow_to_cron(mins,config,debug):
     """
     Adds the workflow launch script to crontab, so that the rocoto workflow will be advanced
     automatically at the specified interval
+
+    Args:
+      mins     (int): Number of minutes between calls to script
+      config  (dict): Python dict of configuration settings from YAML files.
+      debug   (bool): Debug mode, run with additional output
+
+    Returns:
+      None
     """
 
-    if config.get("USE_CRON_TO_RELAUNCH"):
-        intvl_mnts = config.get("CRON_RELAUNCH_INTVL_MNTS")
-        launch_script_fn = config.get("WFLOW_LAUNCH_SCRIPT_FN")
-        launch_log_fn = config.get("WFLOW_LAUNCH_LOG_FN")
-        config["CRONTAB_LINE"] = (
-            f"""*/{intvl_mnts} * * * * cd {exptdir} && """
-            f"""./{launch_script_fn} called_from_cron="TRUE" >> ./{launch_log_fn} 2>&1"""
-        )
+    launch_script_fn = config["workflow"].get("WFLOW_LAUNCH_SCRIPT_FN")
+    launch_log_fn = config["workflow"].get("WFLOW_LAUNCH_LOG_FN")
+    exptdir = config["workflow"].get("EXPTDIR")
+    crontab_line = (f"""*/{mins} * * * * cd {exptdir} && ./{launch_script_fn} TRUE >> ./{launch_log_fn} 2>&1"""
+    )
 
+    add_crontab_line(called_from_cron=False,crontab_line=crontab_line,exptdir=exptdir,debug=debug)
 
 def setup_logging(logfile: str = "log.generate_hafs_vx_workflow", debug: bool = False) -> None:
     """
@@ -373,7 +419,7 @@ if __name__ == "__main__":
 
     #Parse arguments
     parser = argparse.ArgumentParser(
-                     description="Script for setting up a forecast and creating a workflow"\
+                     description="Script for setting up a HAFS verification workflow"\
                      "according to the parameters specified in the config file\n")
 
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -384,6 +430,10 @@ if __name__ == "__main__":
                         help='File name for user configuration file')
     parser.add_argument('-m', '--machine_config', type=str, default='',
                         help='File name for machine configuration file')
+    parser.add_argument('-c', '--crontab_launch', action='store_true',
+                        help= 'Add verification workflow to crontab for automatic task submission')
+    parser.add_argument('--mins', type=int, default=5,
+                        help='If adding workflow to crontab, the interval in minutes between calls')
 
     pargs = parser.parse_args()
 
@@ -405,4 +455,4 @@ if __name__ == "__main__":
     generate_vx_workflow(config)
 
     # If requested (via config settings), add vx workflow to crontab.
-#    add_workflow_to_cron(config)
+    add_workflow_to_cron(pargs.mins,config,pargs.verbose)
