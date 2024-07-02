@@ -4,32 +4,19 @@
 rocoto:
   entities:
     ACCOUNT: '{{ user.ACCOUNT }}'
-    CCPA_OBS_DIR: '{{ platform.CCPA_OBS_DIR }}'
-    COLDSTART: '{{ workflow.COLDSTART }}'
-    COMINgfs: '{{ platform.get("COMINgfs") }}'
-    GLOBAL_VAR_DEFNS_FP: '{{ workflow.GLOBAL_VAR_DEFNS_FP }}'
+    VAR_DEFNS_FP: '{{ workflow.VAR_DEFNS_FP }}'
     HOMEdir: '{{ user.HOMEdir }}'
-    JOBSdir: '{{ user.JOBSdir }}'
     LOAD_MODULES_RUN_TASK_FP: '{{ workflow.LOAD_MODULES_RUN_TASK_FP }}'
-    LOGEXT: ".log"
-    MRMS_OBS_DIR: '{{ platform.MRMS_OBS_DIR }}'
     NCORES_PER_NODE: '{{ platform.NCORES_PER_NODE }}'
-    NDAS_OBS_DIR: '{{ platform.NDAS_OBS_DIR }}'
-    NOHRSC_OBS_DIR: '{{ platform.NOHRSC_OBS_DIR }}'
     PARTITION_DEFAULT: '{{ platform.get("PARTITION_DEFAULT") }}'
-    PARTITION_FCST: '{{ platform.get("PARTITION_FCST") }}'
-    PARTITION_HPSS: '{{ platform.get("PARTITION_HPSS") }}'
     QUEUE_DEFAULT: '{{ platform.get("QUEUE_DEFAULT") }}'
-    QUEUE_FCST: '{{ platform.get("QUEUE_FCST") }}'
-    QUEUE_HPSS: '{{ platform.get("QUEUE_HPSS") }}'
     SCRIPTSdir: '{{ user.SCRIPTSdir }}'
-    SLASH_ENSMEM_SUBDIR: '{% if global.DO_ENSEMBLE  %}{{ "/mem#mem#" }}{% else %}{{ "/" }}{% endif %}'
     USHdir: '{{ user.USHdir }}'
-    WARMSTART_CYCLE_DIR: '{{ workflow.WARMSTART_CYCLE_DIR }}'
     WORKFLOW_ID: '{{ workflow.WORKFLOW_ID }}'
 
     FCST_DIR: '{{ workflow.EXPTDIR }}/@Y@m@d@H'
     LOGDIR: '{{ workflow.EXPTDIR }}/log'
+    LOGEXT: ".log"
   attrs:
     cyclethrottle: "100"
     realtime: "F"
@@ -37,11 +24,11 @@ rocoto:
     taskthrottle: "100"
   cycledefs:
     at_start:
-      - !startstopfreq ['{{workflow.DATE_FIRST_CYCL}}', '{{workflow.DATE_FIRST_CYCL}}', '{{workflow.INCR_CYCL_FREQ}}']
+      - !startstopfreq ['{{hafs.DATE_FIRST_CYCL}}', '{{hafs.DATE_FIRST_CYCL}}', '{{hafs.INCR_CYCL_FREQ}}']
     forecast:
-      - !startstopfreq ['{{workflow.DATE_FIRST_CYCL}}', '{{workflow.DATE_LAST_CYCL}}', '{{workflow.INCR_CYCL_FREQ}}']
+      - !startstopfreq ['{{hafs.DATE_FIRST_CYCL}}', '{{hafs.DATE_LAST_CYCL}}', '{{hafs.INCR_CYCL_FREQ}}']
     cycled_from_second:
-      - !startstopfreq ['{%- if workflow.DATE_FIRST_CYCL != workflow.DATE_LAST_CYCL %}{{ [workflow.DATE_FIRST_CYCL[0:8], "{:02d}".format(workflow.INCR_CYCL_FREQ)]|join }}{%- else %}{{workflow.DATE_FIRST_CYCL}}{%- endif %}', '{{workflow.DATE_LAST_CYCL}}', '{{workflow.INCR_CYCL_FREQ}}']
+      - !startstopfreq ['{%- if hafs.DATE_FIRST_CYCL != hafs.DATE_LAST_CYCL %}{{ [hafs.DATE_FIRST_CYCL[0:8], "{:02d}".format(hafs.INCR_CYCL_FREQ)]|join }}{%- else %}{{hafs.DATE_FIRST_CYCL}}{%- endif %}', '{{hafs.DATE_LAST_CYCL}}', '{{hafs.INCR_CYCL_FREQ}}']
   log: !cycstr '&LOGDIR;/hafs_vx_wflow.log'
   tasks:
     taskgroups: '{{ ["parm/wflow/verify_pre.yaml"]|include }}'

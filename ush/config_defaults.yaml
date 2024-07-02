@@ -47,7 +47,7 @@ user:
   ACCOUNT: ""
   HOMEdir: ''
   USHdir: '{{ [user.HOMEdir, "ush"]|path_join }}'
-  SCRIPTSdir: '{{ [USHdir, "scripts"]|path_join }}'
+  SCRIPTSdir: '{{ [USHdir, "vx_scripts"]|path_join }}'
   PARMdir: '{{ [HOMEdir, "parm"]|path_join }}'
   MODULESdir: '{{ [HOMEdir, "modulefiles", "met_vx"]|path_join }}'
   METPLUS_CONF: '{{ [PARMdir, "metplus"]|path_join }}'
@@ -85,18 +85,6 @@ platform:
   # is Quality of Service) to which workflow tasks are submitted. If this is
   # not set or is set to an empty string, it will be (re)set to a machine-
   # dependent value.
-  #
-  # PARTITION_FCST:
-  # If using the slurm job scheduler (i.e. if SCHED is set to "slurm"), 
-  # The task that runs forecasts is submitted to this partition.  If 
-  # this is not set or set to an empty string, it will be (re)set to a 
-  # machine-dependent value.  This is not used if SCHED is not set to 
-  # "slurm".
-  #
-  # QUEUE_FCST:
-  # The task that runs a forecast is submitted to this queue or QOS.  
-  # If this is not set or set to an empty string, it will be (re)set to a 
-  # machine-dependent value.
   #-----------------------------------------------------------------------
   #
   NCORES_PER_NODE: ""
@@ -105,8 +93,33 @@ platform:
   SCHED: ""
   PARTITION_DEFAULT: ""
   QUEUE_DEFAULT: ""
-  PARTITION_FCST: ""
-  QUEUE_FCST: ""
+
+hafs:
+#-----------------------------
+# Settings that should match the HAFS configuration
+#-----------------------------
+  # DATE_FIRST_CYCL:
+  # Starting cycle date of the FIRST forecast in the set of forecasts to
+  # run.  Format is "YYYYMMDDHH". Note: This has recently changed to
+  # include the first cycle hour.
+  #
+  # DATE_LAST_CYCL:
+  # Starting cycle date of the LAST forecast in the set of forecasts to run.
+  # Format is "YYYYMMDDHH".  Note: This has recently changed to include
+  # the last cycle hour.
+  #
+  # INCR_CYCL_FREQ:
+  # Increment in hours for Rocoto cycle frequency.
+  # Default is 24, which means cycle_freq=24:00:00
+  #
+  # FCST_LEN_HRS:
+  # The length of each forecast, in integer hours. The short forecast
+  # length when there are different lengths.
+
+  DATE_FIRST_CYCL: "YYYYMMDDHH"
+  DATE_LAST_CYCL: '{{ hafs.DATE_FIRST_CYCL }}'
+  INCR_CYCL_FREQ: 24
+  FCST_LEN_HRS: 24
 
 #-----------------------------
 # WORKFLOW config parameters
@@ -141,7 +154,31 @@ workflow:
   # The full path to the experiment directory.
   #-----------------------------------------------------------------------
   #
-  EXPTDIR: '.'
+  EXPTDIR: 'test/'
+  #
+  #-----------------------------------------------------------------------
+  # PREEXISTING_DIR_METHOD:
+  # Set the behavior in case the experiment directory already exists
+  #
+  # * "delete":
+  #   The preexisting directory is deleted and a new directory (having the
+  #   same name as the original) is created.
+  #
+  # * "rename":
+  #   The preexisting directory is renamed and a new directory (having the
+  #   same name as the original preexisting directory) is created. The new
+  #   name of the preexisting directory consists of its original name and
+  #   the suffix "_oldNNN", where NNN is a 3-digit integer chosen to make
+  #   the new name unique.
+  #
+  # * "quit":
+  #   The preexisting directory is left unchanged, but execution of the
+  #   currently running script is terminated.  In this case, the preexisting
+  #   directory must be dealt with manually before rerunning the script.
+  #
+  #-----------------------------------------------------------------------
+  #
+  PREEXISTING_DIR_METHOD: "rename"
   #
   #-----------------------------------------------------------------------
   #
@@ -209,33 +246,6 @@ workflow:
   ROCOTO_YAML_FP: '{{ [EXPTDIR, ROCOTO_YAML_FN] |path_join }}'
   WFLOW_LAUNCH_SCRIPT_FP: '{{ [user.USHdir, WFLOW_LAUNCH_SCRIPT_FN] |path_join }}'
   WFLOW_LAUNCH_LOG_FP: '{{ [EXPTDIR, WFLOW_LAUNCH_LOG_FN] |path_join }}'
-
-  #
-  #-----------------------------------------------------------------------
-  #
-  # Set cron-associated parameters.  Definitions:
-  #
-  # USE_CRON_TO_RELAUNCH:
-  # Flag that determines whether to add a line to the user's cron 
-  # table to call the experiment launch script every CRON_RELAUNCH_INTVL_MNTS 
-  # minutes.
-  #
-  # CRON_RELAUNCH_INTVL_MNTS:
-  # The interval (in minutes) between successive calls of the experiment
-  # launch script by a cron job to (re)launch the experiment (so that the
-  # workflow for the experiment kicks off where it left off).
-  #
-  # CRONTAB_LINE: 
-  # The launch command that will appear in the crontab
-  #
-  # LOAD_MODULES_RUN_TASK_FP: 
-  # Path to load_modules_run_task.sh.
-  #-----------------------------------------------------------------------
-  #
-  USE_CRON_TO_RELAUNCH: false
-  CRON_RELAUNCH_INTVL_MNTS: 3
-  CRONTAB_LINE: ""
-  LOAD_MODULES_RUN_TASK_FP: '{{ [user.USHdir, "load_modules_run_task.sh"]|path_join }}'
 
 #----------------------------
 # verification (vx) parameters
