@@ -99,27 +99,40 @@ hafs:
 # Settings that should match the HAFS configuration
 #-----------------------------
   # DATE_FIRST_CYCL:
-  # Starting cycle date of the FIRST forecast in the set of forecasts to
-  # run.  Format is "YYYYMMDDHH". Note: This has recently changed to
-  # include the first cycle hour.
+  # Starting cycle date of the FIRST forecast in the set of forecasts to run. Format is "YYYYMMDDHH"
   #
   # DATE_LAST_CYCL:
-  # Starting cycle date of the LAST forecast in the set of forecasts to run.
-  # Format is "YYYYMMDDHH".  Note: This has recently changed to include
-  # the last cycle hour.
+  # Starting cycle date of the LAST forecast in the set of forecasts to run. Format is "YYYYMMDDHH"
   #
   # INCR_CYCL_FREQ:
-  # Increment in hours for Rocoto cycle frequency.
-  # Default is 24, which means cycle_freq=24:00:00
+  # Increment in hours for Rocoto cycle frequency. Default is 24, which means cycle_freq=24:00:00
   #
   # FCST_LEN_HRS:
-  # The length of each forecast, in integer hours. The short forecast
-  # length when there are different lengths.
+  # The length of each forecast, in integer hours.
+  #
+  # NOUTHRS:
+  # Interval in hours of the atmospheric model output
 
   DATE_FIRST_CYCL: "YYYYMMDDHH"
   DATE_LAST_CYCL: '{{ hafs.DATE_FIRST_CYCL }}'
   INCR_CYCL_FREQ: 24
   FCST_LEN_HRS: 24
+  NOUTHRS: 6
+
+  # More information on the following settings can be found in the documentation for Automated
+  # Tropical Cyclone Forecast Data/Text Files: https://ftp.nhc.noaa.gov/atcf/README
+  #
+  # BASIN:
+  # Two-character indicator of the tropical cyclone basin: "AL", "EP", or "CP"
+  #
+  # STORM_ID:
+  # AKA "storm number", the numerical ID for the storm being forecast. This must be specified in
+  # config_vx.yaml; the default value '00' is invalid.
+  #
+
+  BASIN: "AL"
+  STORM_ID: 00
+
 
 #-----------------------------
 # WORKFLOW config parameters
@@ -253,10 +266,16 @@ workflow:
 verification:
   #
   # METPLUS_VERBOSITY_LEVEL: 
-  # Logging verbosity level used by METplus verification tools.  0 to 5,
-  # with 0 quiet and 5 loud.  
+  # Logging verbosity level used by METplus verification tools. 0 to 5, with 0 quiet and 5 loud.
   # 
   METPLUS_VERBOSITY_LEVEL: 2
+  #
+  # TECH_ID:
+  # The identifier for the forecast data to use for TCPAIRS comparison, as read in from the
+  # ATCF-format input file. Valid values are documented here:
+  # https://ftp.nhc.noaa.gov/atcf/docs/nhc_techlist.dat
+  TECH_ID: 'OFCL'
+  #   
   # VX_FCST_MODEL_NAME:
   # String that specifies a descriptive name for the model being verified.
   # This is used in forming the names of the verification output files as
