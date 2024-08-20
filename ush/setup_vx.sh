@@ -10,7 +10,7 @@ OPTIONS
       show this help guide
   -p, --platform=PLATFORM
       name of machine you are on
-      (e.g. cheyenne | hera | jet | orion | wcoss2)
+      (e.g. hera | jet )
   --conda-dir=CONDA_DIR
       installation location for miniconda (ush subdirectory by default)
   -v, --verbose
@@ -118,7 +118,7 @@ fi
 printf "\n===================================================\n"
 printf "Verification conda environment set up successfully!\n"
 printf "===================================================\n\n"
-echo "To start a verification workflow:"
+echo "To activate your verification workflow environment:"
 echo "  1. module use ${MODULE_DIR}"
 echo "  2. module load ${MODULE_FILE}"
 echo "  3. conda activate hafs_vx"
