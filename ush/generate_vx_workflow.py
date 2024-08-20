@@ -23,7 +23,6 @@ from python_utils import (
     create_symlink,
     extend_yaml,
     flatten_dict,
-    load_config_file,
     str_to_list,
     update_dict
 )
@@ -172,7 +171,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
 
     # Load the default config.
     logging.debug(f"Loading config defaults file {default_config}")
-    cfg_d = load_config_file(default_config)
+    cfg_d = get_yaml_config(default_config)
     logging.debug(f"Read in the following values from config defaults file:\n")
     logging.debug(cfg_d)
 
@@ -187,7 +186,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
         )
 
     try:
-        cfg_u = load_config_file(user_config)
+        cfg_u = get_yaml_config(user_config)
         logging.debug(f"Read in the following values from YAML config file {user_config}:\n")
         logging.debug(cfg_u)
     except:
@@ -199,6 +198,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
         )
         raise Exception(errmsg)
 
+    # NO EQUIVALENT IN UWTOOLS
     # Make sure the keys in user config match those in the default
     # config.
     invalid = check_structure_dict(cfg_u, cfg_d)
@@ -245,12 +245,16 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
             )
         )
     logging.debug(f"Loading machine defaults file {machine_file}")
-    machine_cfg = load_config_file(machine_file)
+    machine_cfg = get_yaml_config(machine_file)
+
+    # NEED TO UPDATE CONFIG DEFAULTS: https://github.com/NOAA-GSL/ufs-srweather-app/pull/263/files#diff-a4384c6e3a35bddb4828a36142825b542f035fac5ea6df0e7b72e1c2a56bb4e5
 
     # Load the rocoto workflow default file
-    cfg_wflow = load_config_file(os.path.join(homedir, "parm",
+    cfg_wflow = get_yaml_config(os.path.join(homedir, "parm",
         "wflow", "default_workflow.yaml"))
 
+    # THIS NO LONGER NEEDED
+    # TEST ERROR FOR INCLUDING NONE VALUES
     # Takes care of removing any potential "null" entries, i.e.,
     # unsetting a default value from an anchored default_task
     update_dict(cfg_wflow, cfg_wflow)
@@ -260,18 +264,25 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
     if taskgroups:
         cfg_wflow['rocoto']['tasks']['taskgroups'] = taskgroups
 
-    # Extend yaml here on just the rocoto section to include the
+    # UW Dereference here on just the rocoto section to include the
     # appropriate groups of tasks
-    extend_yaml(cfg_wflow)
+    cfg_wflow.dereference()
 
+    # CAN WE USE get_yaml_config HERE? CHECK MPAS APP
     # Put the entries expanded under taskgroups in tasks
     rocoto_tasks = cfg_wflow["rocoto"]["tasks"]
     cfg_wflow["rocoto"]["tasks"] = yaml.load(rocoto_tasks.pop("taskgroups"),Loader=yaml.SafeLoader)
 
+    #
     # Update wflow config from user one more time to make sure any of
     # the "null" settings are removed, i.e., tasks turned off.
-    update_dict(cfg_u.get('rocoto', {}), cfg_wflow["rocoto"])
+    eggs = get_yaml_config(cfg_wflow["rocoto"])
+    eggs.update_from(cfg_u.get('rocoto', {}))
 
+    # NEED TO UPDATE eggs SECTION OF cfg_wflow before continuing
+
+
+    # DO NOT NEED THIS IF WE ARE USING UW ROCOTO GENERATION
     def add_jobname(tasks):
         """ Add the jobname entry for all the tasks in the workflow """
 
@@ -290,7 +301,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
 
 
     # Add jobname entry to each remaining task
-    add_jobname(cfg_wflow["rocoto"]["tasks"])
+    add_jobname(eggs["tasks"])
 
     # Update default config with the constants, the machine config, and
     # then the user_config
@@ -298,29 +309,21 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
     # and so, we update the default config settings in place with all
     # the others.
 
-    # Default workflow settings
-    update_dict(cfg_wflow, cfg_d)
-
-    # Machine settings
-    update_dict(machine_cfg, cfg_d)
-
-    # User settings (take precedence over all others)
-    update_dict(cfg_u, cfg_d)
-
-    # Update the cfg_d against itself now, to remove any "null"
-    # stranglers.
-    update_dict(cfg_d, cfg_d)
+    #
+    for cfg in [cfg_wflow,machine_cfg,cfg_u]:
+        cfg_d.update_from(cfg)
 
     # Set "Home" directory, the top-level HAFS directory, and "ush" directory
     cfg_d["user"]["HOMEdir"] = homedir
     cfg_d["user"]["USHdir"] = ushdir
 
-    extend_yaml(cfg_d)
+    cfg_d.dereference()
+
 
     # Do any conversions of data types
     for sect, settings in cfg_d.items():
         for k, v in settings.items():
-            if not (v is None or v == ""):
+            if not (v is None or v == "") and isinstance(v, str):
                 cfg_d[sect][k] = str_to_list(v)
 
     return cfg_d
@@ -340,8 +343,9 @@ def validate_config(config):
     # -----------------------------------------------------------------------
     #
 
+    # CHECK PR FOR THIS LOOP: https://github.com/NOAA-GSL/ufs-srweather-app/pull/263/files
     # loop through the flattened config and check validity of params
-    cfg_v = load_config_file(os.path.join(ushdir, "valid_param_vals.yaml"))
+    cfg_v = get_yaml_config(os.path.join(ushdir, "valid_param_vals.yaml"))
     for k, v in flatten_dict(config).items():
         if v is None or v == "":
             continue
