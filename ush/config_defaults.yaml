@@ -46,11 +46,11 @@ user:
   MACHINE: "BIG_COMPUTER"
   ACCOUNT: ""
   HOMEdir: ''
-  USHdir: '{{ [user.HOMEdir, "ush"]|path_join }}'
-  SCRIPTSdir: '{{ [USHdir, "vx_scripts"]|path_join }}'
-  PARMdir: '{{ [HOMEdir, "parm"]|path_join }}'
-  MODULESdir: '{{ [HOMEdir, "modulefiles", "met_vx"]|path_join }}'
-  METPLUS_CONF: '{{ [PARMdir, "metplus"]|path_join }}'
+  USHdir: '{{ user.HOMEdir }}/ush'
+  SCRIPTSdir: '{{ user.USHdir }}/vx_scripts'
+  PARMdir: '{{ user.HOMEdir }}/parm'
+  MODULESdir: '{{ user.HOMEdir }}/modulefiles/met_vx'
+  METPLUS_CONF: '{{ user.PARMdir }}/metplus'
 
 #----------------------------
 # PLATFORM config parameters
@@ -89,7 +89,7 @@ platform:
   #
   NCORES_PER_NODE: ""
   TASKTHROTTLE: 1000
-  MODULEFILE: 'vx_{{ user.MACHINE|lower() }}'
+  MODULEFILE: 'vx_{{ user.MACHINE|lower }}'
   SCHED: ""
   PARTITION_DEFAULT: ""
   QUEUE_DEFAULT: ""
@@ -141,11 +141,12 @@ workflow:
   #
   #-----------------------------------------------------------------------
   #
-  # Unique ID for workflow run that will be set in setup.py
+  # Unique ID for workflow run that will be set in setup.py. Can be set
+  # manually but this is not recommended.
   #
   #-----------------------------------------------------------------------
   #
-  WORKFLOW_ID: !nowtimestamp ''
+  WORKFLOW_ID: ''
   #
   #
   #-----------------------------------------------------------------------
@@ -156,7 +157,7 @@ workflow:
   # Path to load_modules_run_task.sh.
   #-----------------------------------------------------------------------
   #
-  LOAD_MODULES_RUN_TASK_FP: '{{ [user.USHdir, "load_modules_run_task.sh"]|path_join }}'
+  LOAD_MODULES_RUN_TASK_FP: '{{ user.USHdir }}/load_modules_run_task.sh'
 
   #
   #-----------------------------------------------------------------------
@@ -167,7 +168,7 @@ workflow:
   # The full path to the experiment directory.
   #-----------------------------------------------------------------------
   #
-  EXPTDIR: 'test/'
+  EXPTDIR: '{{ user.USHdir }}/test'
   #
   #-----------------------------------------------------------------------
   # PREEXISTING_DIR_METHOD:
@@ -252,13 +253,13 @@ workflow:
   VX_XML_FN: "hafs_vx.xml"
   VAR_DEFNS_FN: "var_defns.sh"
   ROCOTO_YAML_FN: "rocoto_defns.yaml"
-  WFLOW_LAUNCH_SCRIPT_FN: "launch_hafs_vx_wflow.sh"
-  WFLOW_LAUNCH_LOG_FN: "log.launch_hafs_vx_wflow"
+  LAUNCH_SCRIPT_FN: "launch_hafs_vx_wflow.sh"
+  LAUNCH_LOG_FN: "log.launch_hafs_vx_wflow"
 
-  VAR_DEFNS_FP: '{{ [EXPTDIR, VAR_DEFNS_FN] |path_join }}'
-  ROCOTO_YAML_FP: '{{ [EXPTDIR, ROCOTO_YAML_FN] |path_join }}'
-  WFLOW_LAUNCH_SCRIPT_FP: '{{ [user.USHdir, WFLOW_LAUNCH_SCRIPT_FN] |path_join }}'
-  WFLOW_LAUNCH_LOG_FP: '{{ [EXPTDIR, WFLOW_LAUNCH_LOG_FN] |path_join }}'
+  VAR_DEFNS_FP: '{{ workflow.EXPTDIR }}/{{ workflow.VAR_DEFNS_FN }}'
+  ROCOTO_YAML_FP: '{{ workflow.EXPTDIR }}/{{ workflow.ROCOTO_YAML_FN }}'
+  WFLOW_LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
+  WFLOW_LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
 
 #----------------------------
 # verification (vx) parameters
