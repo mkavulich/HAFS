@@ -1,9 +1,9 @@
 help([[
 This module loads python environment for running HAFS METplus verification tasks on
-the NOAA RDHPC machine Jet
+the NOAA RDHPC machine Hera
 ]])
 
-whatis([===[Loads libraries needed for running HAFS METplus verification tasks on Jet ]===])
+whatis([===[Loads libraries needed for running HAFS METplus verification tasks on Hera ]===])
 
 load("rocoto")
 
