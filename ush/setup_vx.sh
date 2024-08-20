@@ -109,7 +109,7 @@ source ${CONDA_BUILD_DIR}/etc/profile.d/conda.sh
 conda activate
 if ! conda env list | grep -q "^${CONDA_ENV_NAME}\s" ; then
   echo "Creating ${CONDA_ENV_NAME} conda environment"
-  mamba env create -n hafs_vx --file hafs_vx_environment.yml
+  mamba env create -n hafs_vx --file hafs_vx_environment.yml  || error "Failed to create conda environment, see detailed error message above"
 else
   echo "Conda environment ${CONDA_ENV_NAME} already exists"
 fi
