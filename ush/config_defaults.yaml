@@ -42,6 +42,10 @@ user:
   # The path to the user's final METplus configuration file. By default, 
   # METplus configuration files reside in HAFS/parm/metplus.
   #  
+  # workflow_blocks:
+  # This is a list of YAML files specifying the workflow tasks you want to run
+  # This should be provided as a list of filenames chosen from those available
+  # in HAFS/parm/wflow
   #-----------------------------------------------------------------------
   MACHINE: "BIG_COMPUTER"
   ACCOUNT: ""
@@ -51,6 +55,8 @@ user:
   PARMdir: '{{ user.HOMEdir }}/parm'
   MODULESdir: '{{ user.HOMEdir }}/modulefiles/met_vx'
   METPLUS_CONF: '{{ user.PARMdir }}/metplus'
+  workflow_blocks:
+    - verify_pre.yaml
 
 #----------------------------
 # PLATFORM config parameters
@@ -210,7 +216,7 @@ workflow:
   # These are staged in the exptdir at configuration time
   # 
   # VX_XML_FN:
-  # Name of the rocoto workflow XML file that the experiment generation
+  # Name of the workflow XML file that the experiment generation
   # script creates and that defines the workflow for the experiment.
   #
   # VAR_DEFNS_FN:
@@ -219,29 +225,29 @@ workflow:
   # run, as a combination of default settings (config_defaults.yaml), machine-
   # specific settings (in the directory ush/machine) and user settings specified
   # in VX_CONFIG_FN. This file will be read by all verification tasks as the sole
-  # source of variable definitions, outside of those set in ROCOTO_YAML_FN.
+  # source of variable definitions, outside of those set in WFLOW_YAML_FN.
   #
-  # ROCOTO_YAML_FN:
+  # WFLOW_YAML_FN:
   # Name of the YAML file containing the YAML workflow definition from
   # which the Rocoto XML file is created.
   #
-  # WFLOW_LAUNCH_SCRIPT_FN:
+  # LAUNCH_SCRIPT_FN:
   # Name of the script that can be used to (re)launch the experiment's rocoto
   # workflow.
   #
   # WFLOW_LAUNCH_LOG_FN:
   # Name of the log file that contains the output from successive calls to
-  # the workflow launch script (WFLOW_LAUNCH_SCRIPT_FN).
+  # the workflow launch script (LAUNCH_SCRIPT_FN).
   #
   # VAR_DEFNS_FP: 
   # Path to the location of the variable definition file (VAR_DEFNS_FN).
   #
-  # ROCOTO_YAML_FP: 
-  # Path to the location of the Rocoto YAML configuration file (ROCOTO_YAML_FN).
+  # WFLOW_YAML_FP: 
+  # Path to the location of the Rocoto YAML configuration file (WFLOW_YAML_FN).
   #
-  # WFLOW_LAUNCH_SCRIPT_FP:
+  # LAUNCH_SCRIPT_FP:
   # Path to the workflow launch script 
-  # (WFLOW_LAUNCH_SCRIPT_FN) in the experiment directory. 
+  # (LAUNCH_SCRIPT_FN) in the experiment directory. 
   #
   # WFLOW_LAUNCH_LOG_FP: 
   # Path to the log file (WFLOW_LAUNCH_LOG_FN) in 
@@ -251,15 +257,23 @@ workflow:
   #-----------------------------------------------------------------------
   #
   VX_XML_FN: "hafs_vx.xml"
-  VAR_DEFNS_FN: "var_defns.sh"
-  ROCOTO_YAML_FN: "rocoto_defns.yaml"
+  VAR_DEFNS_FN: "var_defns.yaml"
+  WFLOW_YAML_FN: "workflow_defns.yaml"
   LAUNCH_SCRIPT_FN: "launch_hafs_vx_wflow.sh"
   LAUNCH_LOG_FN: "log.launch_hafs_vx_wflow"
 
   VAR_DEFNS_FP: '{{ workflow.EXPTDIR }}/{{ workflow.VAR_DEFNS_FN }}'
-  ROCOTO_YAML_FP: '{{ workflow.EXPTDIR }}/{{ workflow.ROCOTO_YAML_FN }}'
-  WFLOW_LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
+  WFLOW_YAML_FP: '{{ workflow.EXPTDIR }}/{{ workflow.WFLOW_YAML_FN }}'
+  LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
   WFLOW_LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
+
+  # Task definitions for rocoto workflow
+  attrs: ""
+  cycledefs: ""
+  entities: ""
+  log: ""
+  tasks:
+    taskgroups: ""
 
 #----------------------------
 # verification (vx) parameters
@@ -304,10 +318,3 @@ verification:
   FCST_FN_TEMPLATE: 'hafs.t{init?fmt=%H?shift=-${time_lag}}z.prslev.f{lead?fmt=%HHH?shift=${time_lag}}.grib2'
   #
 
-rocoto:
-  attrs: ""
-  cycledefs: ""
-  entities: ""
-  log: ""
-  tasks:
-    taskgroups: ""

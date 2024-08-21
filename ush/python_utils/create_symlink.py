@@ -17,11 +17,16 @@ def create_symlink(target, symlink):
         raise TypeError(f"""Invalid arguments:\n{target=}\n{symlink=}""")
 
     if not os.path.exists(target):
-        msg = f"""
-            Cannot create symlink to specified target file because the latter does
-            not exist or is not a file:
-                target = '{target}'"""
-        raise Exception(msg)
+        # If literal target does not exist, check if it's a wildcard for multiple targets
+        if glob.glob(target):
+            for wildtarget in glob.glob(target):
+                create_symlink_to_file(wildtarget,symlink,relative)
+        else:
+            msg = f"""
+                Cannot create symlink to specified target file because the latter does
+                not exist or is not a file:
+                    {target=}"""
+            raise Exception(msg)
 
     # If the symlink argument is a directory, assume you want an identically named symlink to target
     # in the specified directory. This mimics native Unix behavior.

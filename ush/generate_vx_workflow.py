@@ -11,6 +11,8 @@ import os
 import shutil
 import sys
 
+
+from pathlib import Path
 from textwrap import dedent
 
 import yaml
@@ -21,14 +23,14 @@ from python_utils import (
     check_structure_dict,
     check_for_preexist_dir_file,
     create_symlink,
-    extend_yaml,
     flatten_dict,
     str_to_list,
-    update_dict
 )
 
-from uwtools.api.template import render 
-from uwtools.api.config import get_yaml_config
+import uwtools.api.template as uwtemplate
+import uwtools.api.config as uwconfig
+import uwtools.api.rocoto as uwrocoto
+
 
 def generate_vx_workflow(vx_config):
     """Function to generate the rocoto XML for running verification with METplus in the HAFS app.
@@ -82,44 +84,51 @@ def generate_vx_workflow(vx_config):
 
     # Create a symlink in the experiment directory that points to the workflow
     # launch script, and the utility needed to read the var_defns file from bash
-    wflow_launch_script_fp = vx_config["workflow"]["WFLOW_LAUNCH_SCRIPT_FP"]
-    wflow_launch_script_fn = vx_config["workflow"]["WFLOW_LAUNCH_SCRIPT_FN"]
+    wflow_launch_script_fp = vx_config["workflow"]["LAUNCH_SCRIPT_FP"]
+    wflow_launch_script_fn = vx_config["workflow"]["LAUNCH_SCRIPT_FN"]
     create_symlink(wflow_launch_script_fp, os.path.join(exptdir, wflow_launch_script_fn))
     create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
 
     # Create a symlink in the experiment directory that p
 
     # Expand all references to other variables and populate jinja templates
-    vx_config = get_yaml_config(vx_config)
+#    vx_config = uwconfig.get_yaml_config(vx_config)
     vx_config.dereference()
 
-    # Write the Rocoto yaml file for the verification workflow
-    rocoto_yaml_fp = vx_config["workflow"]["ROCOTO_YAML_FP"]
-    with open(rocoto_yaml_fp, 'w') as f:
-        yaml.Dumper.ignore_aliases = lambda *args : True
-        yaml.dump(vx_config.get("rocoto"), f, sort_keys=False)
+#    # Write the Rocoto yaml file for the verification workflow
+#    rocoto_yaml_fp = vx_config["workflow"]["WFLOW_YAML_FP"]
+#    with open(rocoto_yaml_fp, 'w') as f:
+#        yaml.Dumper.ignore_aliases = lambda *args : True
+#        yaml.dump(vx_config.get("workflow"), f, sort_keys=False)
 
 
-    # Call uwtools "render" to generate Rocoto XML from yaml template
-    logging.debug("Calling uwtools 'render' to generate Rocoto XML from yaml template")
-    logging.debug("render(input_file = template_xml_fp,output_file = vx_xml_fp,values_src = rocoto_yaml_fp)")
-    rocoto_yaml_fp = vx_config["workflow"]["ROCOTO_YAML_FP"]
-    logging.debug(f"{template_xml_fp=}")
-    logging.debug(f"{vx_xml_fp=}")
-    logging.debug(f"{rocoto_yaml_fp=}")
-    render(
-        input_file = template_xml_fp,
-        output_file = vx_xml_fp,
-        values_src = rocoto_yaml_fp,
-        )
+#    # Call uwtools "uwtemplate.render" to generate Rocoto XML from yaml template
+#    logging.debug("Calling uwtools 'uwtemplate.render' to generate Rocoto XML from yaml template")
+#    logging.debug("uwtemplate.render(input_file = template_xml_fp,output_file = vx_xml_fp,values_src = rocoto_yaml_fp)")
+#    rocoto_yaml_fp = vx_config["workflow"]["WFLOW_YAML_FP"]
+#    logging.debug(f"{template_xml_fp=}")
+#    logging.debug(f"{vx_xml_fp=}")
+#    logging.debug(f"{rocoto_yaml_fp=}")
+#    uwtemplate.render(
+#        input_file = template_xml_fp,
+#        output_file = vx_xml_fp,
+#        values_src = rocoto_yaml_fp,
+#        )
 
     # Write the variable definitions file
-    all_lines = cfg_to_yaml_str(vx_config)
-    var_defns_fp = vx_config["workflow"]["VAR_DEFNS_FP"]
-    var_defns_cfg = copy.deepcopy(vx_config)
-    del var_defns_cfg["rocoto"]
-    with open(var_defns_fp, "a") as f:
-        f.write(cfg_to_yaml_str(var_defns_cfg))
+#    all_lines = cfg_to_yaml_str(vx_config)
+#    var_defns_fp = vx_config["workflow"]["VAR_DEFNS_FP"]
+#    var_defns_cfg = copy.deepcopy(vx_config)
+#    with open(var_defns_fp, "a") as f:
+#        f.write(cfg_to_yaml_str(var_defns_cfg))
+    vx_config.dereference()
+    vx_config.dump(Path(vx_config["workflow"]["VAR_DEFNS_FP"]))
+#    uwconfig.realize(input_config=vx_config,output_file=vx_config["workflow"]["VAR_DEFNS_FP"],stdin_ok=True)
+
+    # Create rocoto xml by reading var_defns file we just created
+    rocoto_valid = uwrocoto.realize(config=vx_config["workflow"]["VAR_DEFNS_FP"], output_file=vx_config["workflow"]["WFLOW_YAML_FP"])
+    if not rocoto_valid:
+        sys.exit(1)
 
     # To have a record of how this experiment/workflow was generated, copy
     # the user configuration file to the experiment directory.
@@ -171,9 +180,13 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
 
     # Load the default config.
     logging.debug(f"Loading config defaults file {default_config}")
-    cfg_d = get_yaml_config(default_config)
+    cfg_d = uwconfig.get_yaml_config(default_config)
     logging.debug(f"Read in the following values from config defaults file:\n")
     logging.debug(cfg_d)
+
+    # Set "Home" directory, the top-level HAFS directory, and "ush" directory
+    cfg_d["user"]["HOMEdir"] = homedir
+    cfg_d["user"]["USHdir"] = ushdir
 
     # Load the user config file, then ensure all user-specified
     # variables correspond to a default value.
@@ -186,7 +199,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
         )
 
     try:
-        cfg_u = get_yaml_config(user_config)
+        cfg_u = uwconfig.get_yaml_config(user_config)
         logging.debug(f"Read in the following values from YAML config file {user_config}:\n")
         logging.debug(cfg_u)
     except:
@@ -245,41 +258,25 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
             )
         )
     logging.debug(f"Loading machine defaults file {machine_file}")
-    machine_cfg = get_yaml_config(machine_file)
-
-    # NEED TO UPDATE CONFIG DEFAULTS: https://github.com/NOAA-GSL/ufs-srweather-app/pull/263/files#diff-a4384c6e3a35bddb4828a36142825b542f035fac5ea6df0e7b72e1c2a56bb4e5
-
-    # Load the rocoto workflow default file
-    cfg_wflow = get_yaml_config(os.path.join(homedir, "parm",
-        "wflow", "default_workflow.yaml"))
-
-    # THIS NO LONGER NEEDED
-    # TEST ERROR FOR INCLUDING NONE VALUES
-    # Takes care of removing any potential "null" entries, i.e.,
-    # unsetting a default value from an anchored default_task
-    update_dict(cfg_wflow, cfg_wflow)
-
-    # Take any user-specified taskgroups entry here.
-    taskgroups = cfg_u.get('rocoto', {}).get('tasks', {}).get('taskgroups')
-    if taskgroups:
-        cfg_wflow['rocoto']['tasks']['taskgroups'] = taskgroups
-
-    # UW Dereference here on just the rocoto section to include the
-    # appropriate groups of tasks
-    cfg_wflow.dereference()
+    machine_cfg = uwconfig.get_yaml_config(machine_file)
 
     # CAN WE USE get_yaml_config HERE? CHECK MPAS APP
     # Put the entries expanded under taskgroups in tasks
-    rocoto_tasks = cfg_wflow["rocoto"]["tasks"]
-    cfg_wflow["rocoto"]["tasks"] = yaml.load(rocoto_tasks.pop("taskgroups"),Loader=yaml.SafeLoader)
-
-    #
-    # Update wflow config from user one more time to make sure any of
-    # the "null" settings are removed, i.e., tasks turned off.
-    eggs = get_yaml_config(cfg_wflow["rocoto"])
-    eggs.update_from(cfg_u.get('rocoto', {}))
-
-    # NEED TO UPDATE eggs SECTION OF cfg_wflow before continuing
+    workflow_blocks = []
+    parmwflow=os.path.join(cfg_d["user"]["HOMEdir"],"parm","wflow")
+    for b in cfg_d["user"]["workflow_blocks"]:
+        workflow_blocks.append(os.path.join(parmwflow,b))
+    workflow_config = None
+    for workflow_block in workflow_blocks:
+        if not os.path.isfile(workflow_block):
+            msg=f"\n{workflow_block} not found in {parmwflow}\n"
+            msg+="Check the value of 'workflow_blocks' in your config file"
+            raise FileNotFoundError(msg)
+        if workflow_config is None:
+            workflow_config = uwconfig.get_yaml_config(workflow_block)
+        else:
+            workflow_config.update_values(uwconfig.get_yaml_config(workflow_block))
+    workflow_config.update_values(cfg_d)
 
 
     # DO NOT NEED THIS IF WE ARE USING UW ROCOTO GENERATION
@@ -301,7 +298,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
 
 
     # Add jobname entry to each remaining task
-    add_jobname(eggs["tasks"])
+#    add_jobname(workflow_config["tasks"])
 
     # Update default config with the constants, the machine config, and
     # then the user_config
@@ -310,12 +307,9 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
     # the others.
 
     #
-    for cfg in [cfg_wflow,machine_cfg,cfg_u]:
-        cfg_d.update_from(cfg)
+    for cfg in [workflow_config,machine_cfg,cfg_u]:
+        cfg_d.update_values(cfg)
 
-    # Set "Home" directory, the top-level HAFS directory, and "ush" directory
-    cfg_d["user"]["HOMEdir"] = homedir
-    cfg_d["user"]["USHdir"] = ushdir
 
     cfg_d.dereference()
 
@@ -345,7 +339,7 @@ def validate_config(config):
 
     # CHECK PR FOR THIS LOOP: https://github.com/NOAA-GSL/ufs-srweather-app/pull/263/files
     # loop through the flattened config and check validity of params
-    cfg_v = get_yaml_config(os.path.join(ushdir, "valid_param_vals.yaml"))
+    cfg_v = uwconfig.get_yaml_config(os.path.join(ushdir, "valid_param_vals.yaml"))
     for k, v in flatten_dict(config).items():
         if v is None or v == "":
             continue
@@ -387,8 +381,8 @@ def add_workflow_to_cron(mins,config,debug):
       None
     """
 
-    launch_script_fn = config["workflow"].get("WFLOW_LAUNCH_SCRIPT_FN")
-    launch_log_fn = config["workflow"].get("WFLOW_LAUNCH_LOG_FN")
+    launch_script_fn = config["workflow"].get("LAUNCH_SCRIPT_FN")
+    launch_log_fn = config["workflow"].get("LAUNCH_LOG_FN")
     exptdir = config["workflow"].get("EXPTDIR")
     crontab_line = (f"""*/{mins} * * * * cd {exptdir} && ./{launch_script_fn} TRUE >> ./{launch_log_fn} 2>&1"""
     )
