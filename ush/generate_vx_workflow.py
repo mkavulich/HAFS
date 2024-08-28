@@ -19,11 +19,9 @@ import yaml
 
 from get_crontab_contents import add_crontab_line
 from python_utils import (
-    cfg_to_yaml_str,
     check_structure_dict,
     check_for_preexist_dir_file,
     create_symlink,
-    flatten_dict,
     str_to_list,
 )
 
@@ -85,44 +83,11 @@ def generate_vx_workflow(vx_config):
     create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
 
     # Expand all references to other variables and populate jinja templates
-#    vx_config = uwconfig.get_yaml_config(vx_config)
-    print("Before deref:\n\n")
-    print(vx_config)
     vx_config.dereference()
-    print("After deref:\n\n")
-    print(vx_config)
 
 
-#    # Call uwtools "uwtemplate.render" to generate Rocoto XML from yaml template
-#    logging.debug("Calling uwtools 'uwtemplate.render' to generate Rocoto XML from yaml template")
-#    logging.debug("uwtemplate.render(input_file = template_xml_fp,output_file = vx_xml_fp,values_src = rocoto_yaml_fp)")
-#    rocoto_yaml_fp = vx_config["workflow"]["WFLOW_YAML_FP"]
-#    logging.debug(f"{template_xml_fp=}")
-#    logging.debug(f"{vx_xml_fp=}")
-#    logging.debug(f"{rocoto_yaml_fp=}")
-#    uwtemplate.render(
-#        input_file = template_xml_fp,
-#        output_file = vx_xml_fp,
-#        values_src = rocoto_yaml_fp,
-#        )
-
-    # Write the variable definitions file
-#    all_lines = cfg_to_yaml_str(vx_config)
-#    var_defns_fp = vx_config["workflow"]["VAR_DEFNS_FP"]
-#    var_defns_cfg = copy.deepcopy(vx_config)
-#    with open(var_defns_fp, "a") as f:
-#        f.write(cfg_to_yaml_str(var_defns_cfg))
     vx_config.dereference()
     vx_config.dump(Path(vx_config["workflow"]["VAR_DEFNS_FP"]))
-#    uwconfig.realize(input_config=vx_config,output_file=vx_config["workflow"]["VAR_DEFNS_FP"],stdin_ok=True)
-
-#    # Load the workflow from the rocoto: section (defined in workflow_blocks file(s))
-#    # Write to an experiment yaml file
-#    uwconfig.realize(
-#        input_config=uwconfig.get_yaml_config(vx_config["rocoto"]),
-#        output_file=experiment_file,
-#        update_config=experiment_config,
-#    )
 
     # Create rocoto xml by reading var_defns file we just created
     rocoto_valid = uwrocoto.realize(config=vx_config["rocoto"], output_file=vx_config["workflow"]["WFLOW_YAML_FP"])
@@ -301,9 +266,6 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
 
     # Update default config with the constants, the machine config, and
     # then the user_config
-    # Recall: update_dict updates the second dictionary with the first,
-    # and so, we update the default config settings in place with all
-    # the others.
 
     #
     for cfg in [workflow_config,machine_cfg,cfg_u]:
@@ -335,33 +297,33 @@ def validate_config(config):
     #
     # -----------------------------------------------------------------------
     #
-
-    # CHECK PR FOR THIS LOOP: https://github.com/NOAA-GSL/ufs-srweather-app/pull/263/files
-    # loop through the flattened config and check validity of params
-    cfg_v = uwconfig.get_yaml_config(os.path.join(ushdir, "valid_param_vals.yaml"))
-    for k, v in flatten_dict(config).items():
-        if v is None or v == "":
-            continue
-        vkey = "valid_vals_" + k
-        if (vkey in cfg_v):
-            if (type(v) == list):
-                if not(all(ele in cfg_v[vkey] for ele in v)):
-                    raise Exception(
-                        dedent(f"""
-                        The variable
-                            {k} = {v}
-                        in the user's configuration has at least one invalid value.  Possible values are:
-                            {k} = {cfg_v[vkey]}"""
-                    ))
-            else:
-                if not (v in cfg_v[vkey]):
-                    raise Exception(
-                        dedent(f"""
-                        The variable
-                            {k} = {v}
-                        in the user's configuration does not have a valid value.  Possible values are:
-                            {k} = {cfg_v[vkey]}"""
-                    ))
+    validfile='valid_param_vals.yaml'
+    # loop through the validation file and compare to corresponding values in config
+    # NOTE: This only works for strings, and is case-insensitive
+    cfg_v = uwconfig.get_yaml_config(os.path.join(config["user"]["USHdir"], validfile))
+    for subkey, subdict in cfg_v.items():
+        if config.get(subkey) and cfg_v.get(subkey):
+            for k, v in subdict.items():
+                if (k in config[subkey]):
+                    if (type(v) == list):
+                        # convert list values to lowercase
+                        complist = [x.casefold() for x in v]
+                        if config[subkey][k].casefold() not in complist:
+                            raise Exception(
+                                dedent(f"""
+                                The variable
+                                    {subkey}:{k} = {config[subkey][k]}
+                                in the user's configuration has at least one invalid value.  Possible values are:
+                                    {k} = {subdict[k]}"""
+                            ))
+                    else:
+                        raise ValueError(
+                            dedent(f"""
+                                Problem in {validfile}:
+                                The variable
+                                    {subkey}:{k} = {v}
+                                Is not a list of valid values"""
+                            ))
 
     return config
 
@@ -446,7 +408,7 @@ if __name__ == "__main__":
     config = load_config_populate_dict(homedir, pargs.default_config, pargs.user_config, pargs.machine_config)
 
     # Check for invalid config settings
-#    config = validate_config(config)
+    config = validate_config(config)
 
     # Generate experiment files
     generate_vx_workflow(config)
