@@ -77,29 +77,20 @@ def generate_vx_workflow(vx_config):
         vx_xml_fn,
     )
 
-    template_xml_fp = os.path.join(
-        vx_config["user"]["PARMdir"],
-        vx_xml_fn,
-    )
-
     # Create a symlink in the experiment directory that points to the workflow
-    # launch script, and the utility needed to read the var_defns file from bash
+    # launch script, and the utility needed to read the var_defns yaml file from bash
     wflow_launch_script_fp = vx_config["workflow"]["LAUNCH_SCRIPT_FP"]
     wflow_launch_script_fn = vx_config["workflow"]["LAUNCH_SCRIPT_FN"]
     create_symlink(wflow_launch_script_fp, os.path.join(exptdir, wflow_launch_script_fn))
     create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
 
-    # Create a symlink in the experiment directory that p
-
     # Expand all references to other variables and populate jinja templates
 #    vx_config = uwconfig.get_yaml_config(vx_config)
+    print("Before deref:\n\n")
+    print(vx_config)
     vx_config.dereference()
-
-#    # Write the Rocoto yaml file for the verification workflow
-#    rocoto_yaml_fp = vx_config["workflow"]["WFLOW_YAML_FP"]
-#    with open(rocoto_yaml_fp, 'w') as f:
-#        yaml.Dumper.ignore_aliases = lambda *args : True
-#        yaml.dump(vx_config.get("workflow"), f, sort_keys=False)
+    print("After deref:\n\n")
+    print(vx_config)
 
 
 #    # Call uwtools "uwtemplate.render" to generate Rocoto XML from yaml template
@@ -125,8 +116,16 @@ def generate_vx_workflow(vx_config):
     vx_config.dump(Path(vx_config["workflow"]["VAR_DEFNS_FP"]))
 #    uwconfig.realize(input_config=vx_config,output_file=vx_config["workflow"]["VAR_DEFNS_FP"],stdin_ok=True)
 
+#    # Load the workflow from the rocoto: section (defined in workflow_blocks file(s))
+#    # Write to an experiment yaml file
+#    uwconfig.realize(
+#        input_config=uwconfig.get_yaml_config(vx_config["rocoto"]),
+#        output_file=experiment_file,
+#        update_config=experiment_config,
+#    )
+
     # Create rocoto xml by reading var_defns file we just created
-    rocoto_valid = uwrocoto.realize(config=vx_config["workflow"]["VAR_DEFNS_FP"], output_file=vx_config["workflow"]["WFLOW_YAML_FP"])
+    rocoto_valid = uwrocoto.realize(config=vx_config["rocoto"], output_file=vx_config["workflow"]["WFLOW_YAML_FP"])
     if not rocoto_valid:
         sys.exit(1)
 
