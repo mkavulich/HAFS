@@ -105,10 +105,10 @@ hafs:
 # Settings that should match the HAFS configuration
 #-----------------------------
   # DATE_FIRST_CYCL:
-  # Starting cycle date of the FIRST forecast in the set of forecasts to run. Format is "YYYYMMDDHH"
+  # Starting cycle date of the FIRST forecast in the set of forecasts to run. Format is a timestamp object
   #
   # DATE_LAST_CYCL:
-  # Starting cycle date of the LAST forecast in the set of forecasts to run. Format is "YYYYMMDDHH"
+  # Starting cycle date of the LAST forecast in the set of forecasts to run. Format is a timestamp object
   #
   # INCR_CYCL_FREQ:
   # Increment in hours for Rocoto cycle frequency. Default is 24, which means cycle_freq=24:00:00
@@ -119,8 +119,8 @@ hafs:
   # NOUTHRS:
   # Interval in hours of the atmospheric model output
 
-  DATE_FIRST_CYCL: "YYYYMMDDHH"
-  DATE_LAST_CYCL: '{{ hafs.DATE_FIRST_CYCL }}'
+  DATE_FIRST_CYCL: !!timestamp '1900-01-01 12:00:00'
+  DATE_LAST_CYCL: !!timestamp '1900-01-01 12:00:00'
   INCR_CYCL_FREQ: 24
   FCST_LEN_HRS: 24
   NOUTHRS: 6
@@ -266,14 +266,6 @@ workflow:
   WFLOW_YAML_FP: '{{ workflow.EXPTDIR }}/{{ workflow.WFLOW_YAML_FN }}'
   LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
   WFLOW_LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
-
-  # Task definitions for rocoto workflow
-  attrs: ""
-  cycledefs: ""
-  entities: ""
-  log: ""
-  tasks:
-    taskgroups: ""
 
 #----------------------------
 # verification (vx) parameters

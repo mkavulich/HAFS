@@ -1,64 +1,62 @@
-workflow:
-  attrs:
-    cyclethrottle: "100"
-    realtime: false
-    scheduler: '{{ platform.SCHED }}'
-    taskthrottle: "100"
-  cycledefs:
-    - attrs:
-        group: at_start
-      spec: "{{hafs.DATE_FIRST_CYCL}} {{hafs.DATE_FIRST_CYCL}} {{hafs.INCR_CYCL_FREQ}}"
-    - attrs:
-        group: forecast
-      spec: "{{hafs.DATE_FIRST_CYCL}} {{hafs.DATE_LAST_CYCL}} {{hafs.INCR_CYCL_FREQ}}"
-  entities:
-    ACCOUNT: '{{ user.ACCOUNT }}'
-    VAR_DEFNS_FP: '{{ workflow.VAR_DEFNS_FP }}'
-    HOMEdir: '{{ user.HOMEdir }}'
-    LOAD_MODULES_RUN_TASK_FP: '{{ workflow.LOAD_MODULES_RUN_TASK_FP }}'
-    NCORES_PER_NODE: '{{ platform.NCORES_PER_NODE }}'
-    PARTITION_DEFAULT: '{{ platform.get("PARTITION_DEFAULT") }}'
-    QUEUE_DEFAULT: '{{ platform.get("QUEUE_DEFAULT") }}'
-    SCRIPTSdir: '{{ user.SCRIPTSdir }}'
-    USHdir: '{{ user.USHdir }}'
-    WORKFLOW_ID: '{{ workflow.WORKFLOW_ID }}'
+rocoto:
+  workflow:
+    attrs:
+      cyclethrottle: !int 100
+      realtime: false
+      scheduler: '{{ platform.SCHED }}'
+      taskthrottle: !int 100
+    cycledef:
+      - attrs:
+          group: at_start
+        spec: "{{ hafs.DATE_FIRST_CYCL.strftime('%Y%m%d%H%M') }} {{ hafs.DATE_FIRST_CYCL.strftime('%Y%m%d%H%M') }} {{hafs.INCR_CYCL_FREQ}}:00:00"
+      - attrs:
+          group: forecast
+        spec: "{{ hafs.DATE_FIRST_CYCL.strftime('%Y%m%d%H%M') }} {{ hafs.DATE_LAST_CYCL.strftime('%Y%m%d%H%M') }} {{hafs.INCR_CYCL_FREQ}}:00:00"
+    entities:
+      ACCOUNT: '{{ user.ACCOUNT }}'
+      VAR_DEFNS_FP: '{{ workflow.VAR_DEFNS_FP }}'
+      HOMEdir: '{{ user.HOMEdir }}'
+      LOAD_MODULES_RUN_TASK_FP: '{{ workflow.LOAD_MODULES_RUN_TASK_FP }}'
+      NCORES_PER_NODE: '{{ platform.NCORES_PER_NODE }}'
+      PARTITION_DEFAULT: '{{ platform.get("PARTITION_DEFAULT") }}'
+      QUEUE_DEFAULT: '{{ platform.get("QUEUE_DEFAULT") }}'
+      SCRIPTSdir: '{{ user.SCRIPTSdir }}'
+      USHdir: '{{ user.USHdir }}'
+      WORKFLOW_ID: '{{ workflow.WORKFLOW_ID }}'
 
-    FCST_DIR: '{{ workflow.EXPTDIR }}/@Y@m@d@H'
-    LOGDIR: '{{ workflow.EXPTDIR }}/log'
-    LOGEXT: ".log"
-  log: "&LOGDIR;/hafs_vx_wflow.log"
-  tasks:
-    task_tcpairs:
-      account: '&ACCOUNT;'
-      attrs:
-        cycledefs: forecast
-        maxtries: '1'
-      command: '&LOAD_MODULES_RUN_TASK_FP; "&SCRIPTSdir;/run_tcpairs.py"'
-      envars:
-        VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
-        USHdir: '&USHdir;'
-        PDY:
-          cyclestr:
-            value: '@Y@m@d'
-        cyc: 
-          cyclestr:
-            value: "@H"
-        subcyc: 
-          cyclestr:
-            value: "@M"
-        LOGDIR: 
-          cyclestr:
-            value: "&LOGDIR;"
-        nprocs: '{{ parent.nnodes * parent.ppn }}'
-        METPLUSTOOLNAME: 'TCPAIRS'
-      join: 
-          cyclestr:
-            value: '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'
-      memory: '{% if user.MACHINE not in ["NOAACLOUD"] %}{{ "2G" }}{% endif %}'
-      nnodes: 1
-      nodes: '{{ nnodes }}:ppn={{ ppn }}'
-      partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
-      ppn: 1
-      queue: '&QUEUE_DEFAULT;'
-      walltime: 00:30:00
+      FCST_DIR: '{{ workflow.EXPTDIR }}/@Y@m@d@H'
+      LOGDIR: '{{ workflow.EXPTDIR }}/log'
+      LOGEXT: ".log"
+    log: "&LOGDIR;/hafs_vx_wflow.log"
+    tasks:
+      task_tcpairs:
+        account: '&ACCOUNT;'
+        attrs:
+          cycledefs: forecast
+          maxtries: '1'
+        command: '&LOAD_MODULES_RUN_TASK_FP; "&SCRIPTSdir;/run_tcpairs.py"'
+        envars:
+          VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
+          USHdir: '&USHdir;'
+          PDY:
+            cyclestr:
+              value: '@Y@m@d'
+          cyc:
+            cyclestr:
+              value: "@H"
+          subcyc:
+            cyclestr:
+              value: "@M"
+          LOGDIR:
+            cyclestr:
+              value: "&LOGDIR;"
+          METPLUSTOOLNAME: 'TCPAIRS'
+        join:
+            cyclestr:
+              value: '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'
+        memory: '{% if user.MACHINE not in ["NOAACLOUD"] %}{{ "2G" }}{% endif %}'
+        nodes: '1:ppn=1'
+        partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
+        queue: '&QUEUE_DEFAULT;'
+        walltime: 00:30:00
 
