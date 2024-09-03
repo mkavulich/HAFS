@@ -1,5 +1,5 @@
 # This file defines valid values for various experiment/workflow varibles that have specific required values
 user:
-  MACHINE: ["HERA", "WCOSS2", "ORION", "HERCULES", "JET", "ODIN", "CHEYENNE", "DERECHO", "STAMPEDE", "LINUX", "MACOS", "NOAACLOUD", "SINGULARITY", "GAEA"]
+  MACHINE: ["HERA", "JET"]
 workflow:
   PREEXISTING_DIR_METHOD: ["delete", "rename", "quit"]

@@ -231,7 +231,7 @@ workflow:
   # Name of the script that can be used to (re)launch the experiment's rocoto
   # workflow.
   #
-  # WFLOW_LAUNCH_LOG_FN:
+  # LAUNCH_LOG_FN:
   # Name of the log file that contains the output from successive calls to
   # the workflow launch script (LAUNCH_SCRIPT_FN).
   #
@@ -242,8 +242,8 @@ workflow:
   # Path to the workflow launch script 
   # (LAUNCH_SCRIPT_FN) in the experiment directory. 
   #
-  # WFLOW_LAUNCH_LOG_FP: 
-  # Path to the log file (WFLOW_LAUNCH_LOG_FN) in 
+  # LAUNCH_LOG_FP: 
+  # Path to the log file (LAUNCH_LOG_FN) in 
   # the experiment directory that contains output from successive 
   # calls to the workflow launch script. 
   # 
@@ -256,7 +256,7 @@ workflow:
 
   VAR_DEFNS_FP: '{{ workflow.EXPTDIR }}/{{ workflow.VAR_DEFNS_FN }}'
   LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
-  WFLOW_LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
+  LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
 
 #----------------------------
 # verification (vx) parameters

@@ -47,6 +47,9 @@ vxdir=$( readlink -f "$vxdir" )
 # These variables are assumed to exist in the global environment by the
 # bash_utils, which is a Very Bad (TM) thing.
 export USHdir=$USHdir
+export MACHINE=$MACHINE
+export MODULESdir=$MODULESdir
+export LAUNCH_LOG_FN=$LAUNCH_LOG_FN
 . $USHdir/source_util_funcs.sh
 
 # Parse arguments
@@ -78,17 +81,6 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
-
-#
-#-----------------------------------------------------------------------
-#
-# Set the name of the experiment.  We take this to be the name of the 
-# experiment subdirectory (i.e. the string after the last "/" in the 
-# full path to the experiment directory).
-#
-#-----------------------------------------------------------------------
-#
-expt_name="${EXPT_SUBDIR}"
 #
 #-----------------------------------------------------------------------
 #
@@ -96,9 +88,9 @@ expt_name="${EXPT_SUBDIR}"
 #
 #-----------------------------------------------------------------------
 #
-machine=$(echo_lowercase hera)
+machine=$(echo "${MACHINE,,}")
 
-. /scratch1/BMC/hmtb/HAFS/add_vx_workflow/HAFS/ush/load_modules_wflow.sh ${machine}
+source ${USHdir}/load_modules_wflow.sh ${machine} ${MODULESdir}
 
 #
 #-----------------------------------------------------------------------
@@ -109,7 +101,7 @@ machine=$(echo_lowercase hera)
 #
 #-----------------------------------------------------------------------
 #
-rocoto_xml_bn=$( basename "${WFLOW_XML_FN}" ".xml" )
+rocoto_xml_bn=$( basename "${VX_XML_FN}" ".xml" )
 rocoto_database_fn="${rocoto_xml_bn}.db"
 launch_log_fn="log.launch_${rocoto_xml_bn}"
 #
@@ -123,14 +115,6 @@ wflow_status="IN PROGRESS"
 #
 #-----------------------------------------------------------------------
 #
-# Change location to the experiment directory.
-#
-#-----------------------------------------------------------------------
-#
-cd "$exptdir"
-#
-#-----------------------------------------------------------------------
-#
 # Issue the rocotorun command to (re)launch the next task in the workflow.  
 # Then check for error messages in the output of rocotorun.  If any are 
 # found, it means the end-to-end run of the workflow failed, so set the
@@ -139,7 +123,7 @@ cd "$exptdir"
 #-----------------------------------------------------------------------
 #
 tmp_fn="rocotorun_output.txt"
-rocotorun_cmd="rocotorun -w \"${WFLOW_XML_FN}\" -d \"${rocoto_database_fn}\" -v 10"
+rocotorun_cmd="rocotorun -w \"${VX_XML_FN}\" -d \"${rocoto_database_fn}\" -v 10"
 eval ${rocotorun_cmd} > ${tmp_fn} 2>&1 || \
   print_err_msg_exit "\
 Call to \"rocotorun\" failed with return code $?."
@@ -164,7 +148,7 @@ done <<< "${rocotorun_output}"
 #
 #-----------------------------------------------------------------------
 #
-rocotostat_cmd="rocotostat -w \"${WFLOW_XML_FN}\" -d \"${rocoto_database_fn}\" -v 10"
+rocotostat_cmd="rocotostat -w \"${VX_XML_FN}\" -d \"${rocoto_database_fn}\" -v 10"
 rocotostat_output=$( eval ${rocotostat_cmd} 2>&1 || \
                      print_err_msg_exit "\
 Call to \"rocotostat\" failed with return code $?."
@@ -211,7 +195,7 @@ Output of rocotostat_cmd is:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ${rocotostat_output}
-" >> "${WFLOW_LAUNCH_LOG_FN}" 2>&1
+" >> "${LAUNCH_LOG_FN}" 2>&1
 #
 #-----------------------------------------------------------------------
 #
@@ -236,7 +220,7 @@ ${rocotostat_output}
 #
 #-----------------------------------------------------------------------
 #
-rocotostat_output=$( rocotostat -w "${WFLOW_XML_FN}" -d "${rocoto_database_fn}" -v 10 -s )
+rocotostat_output=$( rocotostat -w "${VX_XML_FN}" -d "${rocoto_database_fn}" -v 10 -s )
 
 regex_search="^[ ]*([0-9]+)[ ]+([A-Za-z]+)[ ]+.*"
 cycle_str=()
@@ -250,8 +234,8 @@ while read -r line; do
 #
   if [ $i -gt 0 ]; then
     im1=$((i-1))
-    cycle_str[im1]=$( echo "$line" | $SED -r -n -e "s/${regex_search}/\1/p" )
-    cycle_status[im1]=$( echo "$line" | $SED -r -n -e "s/${regex_search}/\2/p" )
+    cycle_str[im1]=$( echo "$line" | sed -r -n -e "s/${regex_search}/\1/p" )
+    cycle_status[im1]=$( echo "$line" | sed -r -n -e "s/${regex_search}/\2/p" )
   fi
   i=$((i+1))
 done <<< "${rocotostat_output}"
@@ -303,7 +287,7 @@ Summary of workflow status:
 End of output from script \"${scrfunc_fn}\".
 ========================================================================
 
-" >> ${WFLOW_LAUNCH_LOG_FN} 2>&1
+" >> ${LAUNCH_LOG_FN} 2>&1
 #
 #-----------------------------------------------------------------------
 #
@@ -317,9 +301,7 @@ if [ "${wflow_status}" = "SUCCESS" ] || \
    [ "${wflow_status}" = "FAILURE" ]; then
 
   msg="
-The end-to-end run of the workflow for the forecast experiment specified 
-by expt_name has completed with the following workflow status (wflow_status):
-  expt_name = \"${expt_name}\"
+The verification workflow has completed with the following workflow status (wflow_status):
   wflow_status = \"${wflow_status}\"
 "
 #
@@ -342,15 +324,15 @@ script for this experiment:
 # Remove CRONTAB_LINE from cron table
 #
     if [ ${called_from_cron} ]; then
-       python3 /scratch1/BMC/hmtb/HAFS/add_vx_workflow/HAFS/ush/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -c -d
+       python3 $USHdir/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -c -d
     else
-       python3 /scratch1/BMC/hmtb/HAFS/add_vx_workflow/HAFS/ush/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -d
+       python3 $USHdir/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -d
     fi
   fi
 #
 # Print the workflow completion message to the launch log file.
 #
-  printf "%s" "$msg" >> ${WFLOW_LAUNCH_LOG_FN} 2>&1
+  printf "%s" "$msg" >> ${LAUNCH_LOG_FN} 2>&1
 #
 # If the stdout from this script is being sent to the screen (e.g. it is
 # not being redirected to a file), then also print out the workflow 
