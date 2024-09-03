@@ -44,9 +44,9 @@ scrfunc_dir=$( dirname "${scrfunc_fp}" )
 vxdir=$( dirname "$0" )
 vxdir=$( readlink -f "$vxdir" )
 
-# Source necessary files.
-. $vxdir/source_yaml.sh 
-source_yaml var_defns.yaml
+# These variables are assumed to exist in the global environment by the
+# bash_utils, which is a Very Bad (TM) thing.
+export USHdir=$USHdir
 . $USHdir/source_util_funcs.sh
 
 # Parse arguments
@@ -70,12 +70,11 @@ EOF_USAGE
 }
 
 CALLED_FROM_CRON=0
-while :; do
+while [[ $# -gt 0 ]]; do
   case $1 in
     --help|-h) usage; exit 0 ;;
     --called_from_cron|-c) CALLED_FROM_CRON=1 ;;
     -?*|?*) usage_error "Unknown option $1" ;;
-    *) break
   esac
   shift
 done
@@ -97,9 +96,9 @@ expt_name="${EXPT_SUBDIR}"
 #
 #-----------------------------------------------------------------------
 #
-machine=$(echo_lowercase $MACHINE)
+machine=$(echo_lowercase hera)
 
-. ${USHdir}/load_modules_wflow.sh ${machine}
+. /scratch1/BMC/hmtb/HAFS/add_vx_workflow/HAFS/ush/load_modules_wflow.sh ${machine}
 
 #
 #-----------------------------------------------------------------------
@@ -343,9 +342,9 @@ script for this experiment:
 # Remove CRONTAB_LINE from cron table
 #
     if [ ${called_from_cron} ]; then
-       python3 $USHdir/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -c -d
+       python3 /scratch1/BMC/hmtb/HAFS/add_vx_workflow/HAFS/ush/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -c -d
     else
-       python3 $USHdir/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -d
+       python3 /scratch1/BMC/hmtb/HAFS/add_vx_workflow/HAFS/ush/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -d
     fi
   fi
 #

@@ -11,8 +11,9 @@ import os
 import shutil
 import sys
 
-
 from pathlib import Path
+from stat import S_IXUSR
+from string import Template
 from textwrap import dedent
 
 import yaml
@@ -75,11 +76,26 @@ def generate_vx_workflow(vx_config):
         vx_xml_fn,
     )
 
-    # Create a symlink in the experiment directory that points to the workflow
-    # launch script, and the utility needed to read the var_defns yaml file from bash
+    # Customize the workflow launch script to include the necessary experiment-specific variables
     wflow_launch_script_fp = vx_config["workflow"]["LAUNCH_SCRIPT_FP"]
     wflow_launch_script_fn = vx_config["workflow"]["LAUNCH_SCRIPT_FN"]
-    create_symlink(wflow_launch_script_fp, os.path.join(exptdir, wflow_launch_script_fn))
+    with open(wflow_launch_script_fp, "r", encoding='utf-8') as launch_script_file:
+        launch_script_content = launch_script_file.read()
+
+    # Stage an experiment-specific launch file in the experiment directory
+    template = Template(launch_script_content)
+
+    # The script needs several variables from the workflow and user sections
+    template_variables = {**vx_config["user"], **vx_config["workflow"]}
+    launch_content =  template.safe_substitute(template_variables)
+
+    launch_fp = os.path.join(exptdir, wflow_launch_script_fn)
+    with open(launch_fp, "w", encoding='utf-8') as expt_launch_fn:
+        expt_launch_fn.write(launch_content)
+
+    os.chmod(launch_fp, os.stat(launch_fp).st_mode|S_IXUSR)
+
+    # Link "source_yaml.sh" for use in bash scripts
     create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
 
     # Expand all references to other variables and populate jinja templates
@@ -90,7 +106,7 @@ def generate_vx_workflow(vx_config):
     vx_config.dump(Path(vx_config["workflow"]["VAR_DEFNS_FP"]))
 
     # Create rocoto xml by reading var_defns file we just created
-    rocoto_valid = uwrocoto.realize(config=vx_config["rocoto"], output_file=vx_config["workflow"]["WFLOW_YAML_FP"])
+    rocoto_valid = uwrocoto.realize(config=vx_config["rocoto"], output_file=vx_xml_fp)
     if not rocoto_valid:
         sys.exit(1)
 
@@ -102,10 +118,9 @@ def generate_vx_workflow(vx_config):
     # command line in order to launch the workflow and to check its status.
     # Also, print out the line that should be placed in the user's cron table
     # in order for the workflow to be continually resubmitted.
-    vx_xml = vx_config["workflow"]["VX_XML_FN"]
-    wflow_db_fn = f"{os.path.splitext(vx_xml)[0]}.db"
-    rocotorun_cmd = f"rocotorun -w {vx_xml} -d {wflow_db_fn} -v 10"
-    rocotostat_cmd = f"rocotostat -w {vx_xml} -d {wflow_db_fn} -v 10"
+    wflow_db_fn = f"{os.path.splitext(vx_xml_fn)[0]}.db"
+    rocotorun_cmd = f"rocotorun -w {vx_xml_fn} -d {wflow_db_fn} -v 10"
+    rocotostat_cmd = f"rocotostat -w {vx_xml_fn} -d {wflow_db_fn} -v 10"
 
     logging.info(
             f"""
@@ -345,7 +360,7 @@ def add_workflow_to_cron(mins,config,debug):
     launch_script_fn = config["workflow"].get("LAUNCH_SCRIPT_FN")
     launch_log_fn = config["workflow"].get("LAUNCH_LOG_FN")
     exptdir = config["workflow"].get("EXPTDIR")
-    crontab_line = (f"""*/{mins} * * * * cd {exptdir} && ./{launch_script_fn} TRUE >> ./{launch_log_fn} 2>&1"""
+    crontab_line = (f"""*/{mins} * * * * cd {exptdir} && ./{launch_script_fn} -c >> ./{launch_log_fn} 2>&1"""
     )
 
     add_crontab_line(called_from_cron=False,crontab_line=crontab_line,exptdir=exptdir,debug=debug)

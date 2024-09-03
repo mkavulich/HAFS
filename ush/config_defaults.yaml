@@ -225,11 +225,7 @@ workflow:
   # run, as a combination of default settings (config_defaults.yaml), machine-
   # specific settings (in the directory ush/machine) and user settings specified
   # in VX_CONFIG_FN. This file will be read by all verification tasks as the sole
-  # source of variable definitions, outside of those set in WFLOW_YAML_FN.
-  #
-  # WFLOW_YAML_FN:
-  # Name of the YAML file containing the YAML workflow definition from
-  # which the Rocoto XML file is created.
+  # source of variable definitions
   #
   # LAUNCH_SCRIPT_FN:
   # Name of the script that can be used to (re)launch the experiment's rocoto
@@ -241,9 +237,6 @@ workflow:
   #
   # VAR_DEFNS_FP: 
   # Path to the location of the variable definition file (VAR_DEFNS_FN).
-  #
-  # WFLOW_YAML_FP: 
-  # Path to the location of the Rocoto YAML configuration file (WFLOW_YAML_FN).
   #
   # LAUNCH_SCRIPT_FP:
   # Path to the workflow launch script 
@@ -258,12 +251,10 @@ workflow:
   #
   VX_XML_FN: "hafs_vx.xml"
   VAR_DEFNS_FN: "var_defns.yaml"
-  WFLOW_YAML_FN: "workflow_defns.yaml"
   LAUNCH_SCRIPT_FN: "launch_hafs_vx_wflow.sh"
   LAUNCH_LOG_FN: "log.launch_hafs_vx_wflow"
 
   VAR_DEFNS_FP: '{{ workflow.EXPTDIR }}/{{ workflow.VAR_DEFNS_FN }}'
-  WFLOW_YAML_FP: '{{ workflow.EXPTDIR }}/{{ workflow.WFLOW_YAML_FN }}'
   LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
   WFLOW_LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
 
