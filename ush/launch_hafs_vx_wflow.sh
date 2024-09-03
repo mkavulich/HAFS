@@ -304,32 +304,6 @@ if [ "${wflow_status}" = "SUCCESS" ] || \
 The verification workflow has completed with the following workflow status (wflow_status):
   wflow_status = \"${wflow_status}\"
 "
-#
-# If a cron job was being used to periodically relaunch the workflow, we
-# now remove the entry in the crontab corresponding to the workflow 
-# because the end-to-end run of the workflow has now either succeeded or 
-# failed and will remain in that state without manual user intervention.
-# Thus, there is no need to try to relaunch it.  We also append a message 
-# to the completion message above to indicate this.
-#
-  if [ "${USE_CRON_TO_RELAUNCH}" = "TRUE" ]; then
-
-    msg="${msg}\
-Thus, there is no need to relaunch the workflow via a cron job.  Removing 
-from the crontab the line (CRONTAB_LINE) that calls the workflow launch 
-script for this experiment:
-  CRONTAB_LINE = \"${CRONTAB_LINE}\"
-"
-#
-# Remove CRONTAB_LINE from cron table
-#
-    if [ ${called_from_cron} ]; then
-       python3 $USHdir/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -c -d
-    else
-       python3 $USHdir/get_crontab_contents.py --remove -m=${machine} -l="${CRONTAB_LINE}" -d
-    fi
-  fi
-#
 # Print the workflow completion message to the launch log file.
 #
   printf "%s" "$msg" >> ${LAUNCH_LOG_FN} 2>&1
@@ -341,5 +315,4 @@ script for this experiment:
   if [ -t 1 ]; then
     printf "%s" "$msg"
   fi
-
 fi

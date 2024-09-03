@@ -34,7 +34,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: '&LOAD_MODULES_RUN_TASK_FP; "&SCRIPTSdir;/run_tcpairs.py"'
+        command: 'python3 &SCRIPTSdir;/run_tcpairs.py'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'
