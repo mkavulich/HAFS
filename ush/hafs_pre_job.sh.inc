@@ -23,66 +23,51 @@ else
   __ms_shell=sh
 fi
 
-target=""
+#Ensure that target is lowercase before comparison
+target=${WHERE_AM_I,,}
 USERNAME=$(echo $LOGNAME | awk '{ print tolower($0)'})
 
-if [[ -d /lfs4 ]] ; then
+if [ "$target" == "jet" ] ; then
   # We are on NOAA Jet
   if ( ! eval module help > /dev/null 2>&1 ) ; then
     echo load the module command 1>&2
     source /apps/lmod/lmod/init/$__ms_shell
   fi
-  target=jet
   module purge
   module use /apps/modules/modulefiles
   module use /apps/lmod/lmod/modulefiles/Core
-elif [[ -d /scratch1/NCEPDEV ]] ; then
+elif [ "$target" == "hera" ] ; then
   # We are on NOAA Hera
   if ( ! eval module help > /dev/null 2>&1 ) ; then
     echo load the module command 1>&2
     source /apps/lmod/lmod/init/$__ms_shell
   fi
-  target=hera
   module purge
   module use /apps/modules/modulefiles
   module use /apps/lmod/lmod/modulefiles/Core
-elif [[ -d /work/noaa ]] ; then
-  # We are on MSU Orion/Hercules
-  if [[ "$(hostname)" =~ "hercules" ]] ; then
-    source /apps/other/lmod/lmod/init/$__ms_shell
-    target=hercules
-    module purge
-#    module use /apps/contrib/modulefiles
-    ulimit -s 6000000
-  else
-    if ( ! eval module help > /dev/null 2>&1 ) ; then
-      echo load the module command 1>&2
-      source /apps/lmod/lmod/init/$__ms_shell
-    fi
-    target=orion
-    module purge
-    module use /apps/modulefiles/core
-    module use /apps/contrib/modulefiles
-    module use /apps/contrib/NCEPLIBS/lib/modulefiles
-    module use /apps/contrib/NCEPLIBS/orion/modulefiles
-    ulimit -s unlimited
+elif [ "$target" == "hercules" ] ; then
+  # We are on MSU Hercules
+  source /apps/other/lmod/lmod/init/$__ms_shell
+  module purge
+  ulimit -s 6000000
+elif [ "$target" == "orion" ] ; then
+  # We are on MSU Orion
+  if ( ! eval module help > /dev/null 2>&1 ) ; then
+    echo load the module command 1>&2
+    source /apps/lmod/lmod/init/$__ms_shell
   fi
-elif [[ -d /lfs/h1 && -d /lfs/h2 ]] ; then
+  module purge
+  module use /apps/modulefiles/core
+  module use /apps/contrib/modulefiles
+  module use /apps/contrib/NCEPLIBS/lib/modulefiles
+  module use /apps/contrib/NCEPLIBS/orion/modulefiles
+  ulimit -s unlimited
+elif [ "$target" == "wcoss2" ] ; then
   # We are on NOAA WCOSS2
   echo load the module command 1>&2
   source /usr/share/lmod/lmod/init/$__ms_shell
-# source /usr/share/lmod/lmod/init/sh
-  target=wcoss2
-# module purge # use module reset instead
   module reset
-elif [[ -d /glade ]] ; then
-  # We are on NCAR Cheyenne
-  if ( ! eval module help > /dev/null 2>&1 ) ; then
-    echo load the module command 1>&2
-    source /usr/share/Modules/init/$__ms_shell
-  fi
-  target=cheyenne
-  module purge
+elif [ "$target" == "gaea" ] ; then
 elif [[ -d /lustre && -d /ncrc ]] ; then
   # We are on GAEA.
   if ( ! eval module help > /dev/null 2>&1 ) ; then
@@ -94,10 +79,7 @@ elif [[ -d /lustre && -d /ncrc ]] ; then
     echo load the module command 1>&2
     source /etc/profile
   fi
-  target=gaea
   module purge
-elif [[ "$(hostname)" =~ "odin" ]] ; then
-  target="odin"
 else
   echo WARNING: UNKNOWN PLATFORM 1>&2
 fi
