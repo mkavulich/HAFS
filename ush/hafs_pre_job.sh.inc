@@ -4,7 +4,7 @@
 # Abstract:
 #   This script detects HAFS running platform and prepares module environment.
 ################################################################################
-
+set -x
 # Create a test function for sh vs. bash detection.  The name is
 # randomly generated to reduce the chances of name collision.
 __ms_function_name="setup__test_function__$$"
@@ -23,8 +23,10 @@ else
   __ms_shell=sh
 fi
 
+#If target not set, check WHERE_AM_I variable
+target=${target:-${WHERE_AM_I}}
 #Ensure that target is lowercase before comparison
-target=${WHERE_AM_I,,}
+target=${target,,}
 USERNAME=$(echo $LOGNAME | awk '{ print tolower($0)'})
 
 if [ "$target" == "jet" ] ; then
@@ -68,7 +70,6 @@ elif [ "$target" == "wcoss2" ] ; then
   source /usr/share/lmod/lmod/init/$__ms_shell
   module reset
 elif [ "$target" == "gaea" ] ; then
-elif [[ -d /lustre && -d /ncrc ]] ; then
   # We are on GAEA.
   if ( ! eval module help > /dev/null 2>&1 ) ; then
     # We cannot simply load the module command.  The GAEA
