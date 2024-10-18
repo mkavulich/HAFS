@@ -1,5 +1,30 @@
 #!/bin/sh
 set -xeu
+
+function usage() {
+  cat << EOF_USAGE
+Usage: $0 PLATFORM
+
+OPTIONS:
+   PLATFORM - name of machine you are on
+      (e.g. hera | jet | orion | wcoss2 )
+EOF_USAGE
+}
+
+# Make sure machine name is passed as first argument
+if [ $# -eq 0 ]; then
+  usage
+  exit 1
+fi
+
+# help message
+if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+  usage
+  exit 0
+fi
+
+export target=$1
+
 source ./machine-setup.sh.inc > /dev/null 2>&1
 
 # RUN_ENVIR of nco or dev
