@@ -3,3 +3,4 @@ platform:
   SCHED: slurm
   PARTITION_DEFAULT: sjet,vjet,kjet,xjet
   QUEUE_DEFAULT: batch
+  BEST_TRACK: /lfs5/HFIP/hwrf-data/hwrf-input/abdeck/btk/

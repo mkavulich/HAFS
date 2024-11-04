@@ -34,7 +34,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: 'python3 &SCRIPTSdir;/run_tcpairs.py'
+        command: 'cd {{ workflow.EXPTDIR }} && &SCRIPTSdir;/run_tcpairs.sh'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'
@@ -51,6 +51,7 @@ rocoto:
             cyclestr:
               value: "&LOGDIR;"
           METPLUSTOOLNAME: 'TCPAIRS'
+          BEST_TRACK: '{{ platform.BEST_TRACK }}'
         join:
             cyclestr:
               value: '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'
