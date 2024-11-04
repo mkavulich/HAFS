@@ -34,7 +34,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: 'cd {{ workflow.EXPTDIR }} && &SCRIPTSdir;/run_tcpairs.sh'
+        command: '&SCRIPTSdir;/run_tcpairs.sh'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'

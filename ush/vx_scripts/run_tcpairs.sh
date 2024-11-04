@@ -29,31 +29,31 @@ TCVX_CONF='tcpairs.conf'
 TCST_CONF='tcstat.conf'
 
 # Set the input and output directories here
-INPUT_DIR='/mnt/lfs5/HFIP/dtc-hurr/Michael.Kavulich/HAFS/from_bri/hafs_r2o/sample_data'
+INPUT_DIR=${CDNOSCRUB}/HAFS_rt_hfsa_dev_ww3/
 OUTPUT_DIR=${EXPTDIR}
 
 # Set variables to export here
-START_DATE=2021082612
-END_DATE=2021082612
+START_DATE=2020082506
+END_DATE=2020082506
 INC=21600
-BASIN='AL'
-STORM_ID='09'
 #MODEL='OFCL'
 MODEL_TMPL='HFSA'
 
 # If statement to get proper file template
-if [[ ${MODEL_TMPL} = "OFCL" ]]
-then
-    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}.dat'
-elif [[ ${MODEL_TMPL} = "H221" ]]
-then
-    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HWRF_{init?fmt=%Y%m%d%H}.dat'
-elif [[ ${MODEL_TMPL} = "M221" ]]
-then
-    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HMON_{init?fmt=%Y%m%d%H}.dat'
-else
-    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HAFS_{init?fmt=%Y%m%d%H}.dat'
-fi
+
+ADECK_TEMPLATE='{cyclone}l.{init?fmt=%Y%m%d%H}.hfsa.trak.atcfunix'
+#if [[ ${MODEL_TMPL} = "OFCL" ]]
+#then
+#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}.dat'
+#elif [[ ${MODEL_TMPL} = "H221" ]]
+#then
+#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HWRF_{init?fmt=%Y%m%d%H}.dat'
+#elif [[ ${MODEL_TMPL} = "M221" ]]
+#then
+#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HMON_{init?fmt=%Y%m%d%H}.dat'
+#else
+#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HAFS_{init?fmt=%Y%m%d%H}.dat'
+#fi
 
 # Export the variables
 export INPUT_DIR
