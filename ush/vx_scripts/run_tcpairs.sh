@@ -12,10 +12,17 @@ module use /mnt/lfs4/HFIP/hfv3gfs/role.epic/spack-stack/spack-stack-1.6.0/envs/u
 module load Core/stack-intel/2021.5.0
 module load stack-intel-oneapi-mpi/2021.5.1
 module load metplus/5.1.0
-echo `env` > env.out
 
+set -x
 #metplus_ROOT is set by loading metplus module above
 export METPLUS_ROOT=$metplus_ROOT
+
+# Import variables from var_defns.yaml
+. source_yaml.sh
+for sect in hafs platform user verification workflow; do
+  source_yaml ${VAR_DEFNS_FP} ${sect}
+done
+echo `env` > env.out
 
 # Set conf file names here
 TCVX_CONF='tcpairs.conf'
@@ -23,7 +30,7 @@ TCST_CONF='tcstat.conf'
 
 # Set the input and output directories here
 INPUT_DIR='/mnt/lfs5/HFIP/dtc-hurr/Michael.Kavulich/HAFS/from_bri/hafs_r2o/sample_data'
-OUTPUT_DIR='/mnt/lfs5/HFIP/dtc-hurr/Michael.Kavulich/HAFS/fresh_clone/HAFS/ush/vx_scripts/test'
+OUTPUT_DIR=${EXPTDIR}
 
 # Set variables to export here
 START_DATE=2021082612
@@ -58,6 +65,10 @@ export BASIN
 export STORM_ID
 export MODEL_TMPL
 export ADECK_TEMPLATE
+export BEST_TRACK
 
-# Run tc_pairs 
-python ${METPLUS_ROOT}/ush/run_metplus.py -c $TCVX_CONF
+# Create experiment dir and run tcpairs
+mkdir -p ${EXPTDIR}/tcpairs
+cd ${EXPTDIR}/tcpairs
+
+python ${METPLUS_ROOT}/ush/run_metplus.py -c ${SCRIPTSdir}/${TCVX_CONF}
