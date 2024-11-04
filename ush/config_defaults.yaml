@@ -139,6 +139,11 @@ hafs:
   BASIN: "AL"
   STORM_ID: 00
 
+  # Settings from system.conf file; must be specified manually for now but will try to pull these
+  # automatically in the future
+  #
+
+  CDNOSCRUB: ''
 
 #-----------------------------
 # WORKFLOW config parameters
