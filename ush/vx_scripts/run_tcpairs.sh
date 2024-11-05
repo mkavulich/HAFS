@@ -26,34 +26,22 @@ echo `env` > env.out
 
 # Set conf file names here
 TCVX_CONF='tcpairs.conf'
-TCST_CONF='tcstat.conf'
 
 # Set the input and output directories here
 INPUT_DIR=${CDNOSCRUB}/HAFS_rt_hfsa_dev_ww3/
-OUTPUT_DIR=${EXPTDIR}
+OUTPUT_DIR=${EXPTDIR}/${START_DATE}
 
-# Set variables to export here
-START_DATE=2020082506
-END_DATE=2020082506
-INC=21600
+# Since TCPairs is set up to run once per cycle, the START_DATE will always equal the END_DATE
+END_DATE=${START_DATE}
+INC=3600
 #MODEL='OFCL'
-MODEL_TMPL='HFSA'
 
-# If statement to get proper file template
+# We need to know if this is a HAFS-A or HAFS-B run; this comes from the HAFS "RUN" variable (how wonderfully descriptive)
+# The carets (^^) make the string all-caps
+MODEL=${RUN^^}
 
+# Format for A-deck forecast track file
 ADECK_TEMPLATE='{cyclone}l.{init?fmt=%Y%m%d%H}.hfsa.trak.atcfunix'
-#if [[ ${MODEL_TMPL} = "OFCL" ]]
-#then
-#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}.dat'
-#elif [[ ${MODEL_TMPL} = "H221" ]]
-#then
-#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HWRF_{init?fmt=%Y%m%d%H}.dat'
-#elif [[ ${MODEL_TMPL} = "M221" ]]
-#then
-#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HMON_{init?fmt=%Y%m%d%H}.dat'
-#else
-#    ADECK_TEMPLATE='a{basin}{cyclone}{init?fmt=%Y}_{model}_HAFS_{init?fmt=%Y%m%d%H}.dat'
-#fi
 
 # Export the variables
 export INPUT_DIR
@@ -63,12 +51,14 @@ export END_DATE
 export INC
 export BASIN
 export STORM_ID
-export MODEL_TMPL
 export ADECK_TEMPLATE
 export BEST_TRACK
+export LOG_MET_VERBOSITY
+export LOG_LEVEL
+export MODEL
 
 # Create experiment dir and run tcpairs
-mkdir -p ${EXPTDIR}/tcpairs
-cd ${EXPTDIR}/tcpairs
+mkdir -p ${OUTPUT_DIR}/tcpairs
+cd ${OUTPUT_DIR}/tcpairs
 
 python ${METPLUS_ROOT}/ush/run_metplus.py -c ${SCRIPTSdir}/${TCVX_CONF}
