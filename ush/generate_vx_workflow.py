@@ -272,10 +272,6 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
             if not (v is None or v == "") and isinstance(v, str):
                 cfg_d[sect][k] = str_to_list(v)
 
-    # Add special variables for date/times that bash can handle
-    cfg_d["hafs"]["DATE_FIRST_CYCL_YYYYMMDDHH"]=cfg_d["hafs"]["DATE_FIRST_CYCL"].strftime('%Y%m%d%H')
-    cfg_d["hafs"]["DATE_LAST_CYCL_YYYYMMDDHH"]=cfg_d["hafs"]["DATE_LAST_CYCL"].strftime('%Y%m%d%H')
-
     return cfg_d
 
 

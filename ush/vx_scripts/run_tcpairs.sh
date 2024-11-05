@@ -1,20 +1,7 @@
 #!/bin/bash -l
 #set -x
 
-# Run these commands before running this script
-#export TOP_DIR=/glade/work/dtcrt/METplus/casper/components
-#module use $TOP_DIR/METplus/installations/modulefiles
-#module load metplus/5.1.0
-
-
-# Set the METplus location here
-module use /mnt/lfs4/HFIP/hfv3gfs/role.epic/spack-stack/spack-stack-1.6.0/envs/unified-env-rocky8/install/modulefiles/
-module load Core/stack-intel/2021.5.0
-module load stack-intel-oneapi-mpi/2021.5.1
-module load metplus/5.1.0
-
-set -x
-#metplus_ROOT is set by loading metplus module above
+#metplus_ROOT is set by loading metplus module, which should be done already
 export METPLUS_ROOT=$metplus_ROOT
 
 # Import variables from var_defns.yaml
@@ -22,7 +9,6 @@ export METPLUS_ROOT=$metplus_ROOT
 for sect in hafs platform user verification workflow; do
   source_yaml ${VAR_DEFNS_FP} ${sect}
 done
-echo `env` > env.out
 
 # Set conf file names here
 TCVX_CONF='tcpairs.conf'
