@@ -16,7 +16,7 @@ rocoto:
       ACCOUNT: '{{ user.ACCOUNT }}'
       VAR_DEFNS_FP: '{{ workflow.VAR_DEFNS_FP }}'
       HOMEdir: '{{ user.HOMEdir }}'
-      LOAD_MODULES_RUN_TASK_FP: '{{ workflow.LOAD_MODULES_RUN_TASK_FP }}'
+      LOAD_MODULES_RUN_TASK: '{{ workflow.LOAD_MODULES_RUN_TASK_FP }} {{ user.MACHINE }}'
       NCORES_PER_NODE: '{{ platform.NCORES_PER_NODE }}'
       PARTITION_DEFAULT: '{{ platform.get("PARTITION_DEFAULT") }}'
       QUEUE_DEFAULT: '{{ platform.get("QUEUE_DEFAULT") }}'
@@ -34,7 +34,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: '&SCRIPTSdir;/run_tcpairs.sh'
+        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_tcpairs.sh'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'
