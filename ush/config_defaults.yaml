@@ -110,8 +110,8 @@ hafs:
   # DATE_LAST_CYCL:
   # Starting cycle date of the LAST forecast in the set of forecasts to run. Format is a timestamp object
   #
-  # INCR_CYCL_FREQ:
-  # Increment in hours for Rocoto cycle frequency. Default is 24, which means cycle_freq=24:00:00
+  # CYCL_FREQ:
+  # Increment in hours between forecast cycles. Default is 24, which means cycle_freq=24:00:00
   #
   # FCST_LEN_HRS:
   # The length of each forecast, in integer hours.
@@ -121,7 +121,7 @@ hafs:
 
   DATE_FIRST_CYCL: !!timestamp '1900-01-01 12:00:00'
   DATE_LAST_CYCL: !!timestamp '1900-01-01 12:00:00'
-  INCR_CYCL_FREQ: 24
+  CYCL_FREQ: 24
   FCST_LEN_HRS: 24
   NOUTHRS: 6
 
@@ -144,6 +144,7 @@ hafs:
   #
 
   CDNOSCRUB: ''
+  RUN: 'hfsa'
 
 #-----------------------------
 # WORKFLOW config parameters
@@ -305,4 +306,16 @@ verification:
   # 
   FCST_FN_TEMPLATE: 'hafs.t{init?fmt=%H?shift=-${time_lag}}z.prslev.f{lead?fmt=%HHH?shift=${time_lag}}.grib2'
   #
+  # METplus logging settings
+  #
+  # LOG_MET_VERBOSITY
+  # Verbosity of MET log files, 0-9
+  #
+  # LOG_LEVEL
+  # Python logging level for METplus wrappers. Details here:
+  # https://metplus.readthedocs.io/en/latest/Users_Guide/systemconfiguration.html#log-level
+  
+  LOG_MET_VERBOSITY: 2
+  LOG_LEVEL: INFO
+
 

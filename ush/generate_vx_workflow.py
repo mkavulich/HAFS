@@ -257,28 +257,6 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
             workflow_config.update_values(uwconfig.get_yaml_config(workflow_block))
     workflow_config.update_values(cfg_d)
 
-
-    # DO NOT NEED THIS IF WE ARE USING UW ROCOTO GENERATION
-    def add_jobname(tasks):
-        """ Add the jobname entry for all the tasks in the workflow """
-
-        if not isinstance(tasks, dict):
-            return
-        for task, task_settings in tasks.items():
-            task_type = task.split("_", maxsplit=1)[0]
-            if task_type == "task":
-                # Use the provided attribute if it is present, otherwise use
-                # the name in the key
-                tasks[task]["jobname"] = \
-                    task_settings.get("attrs", {}).get("name") or \
-                    task.split("_", maxsplit=1)[1]
-            elif task_type == "metatask":
-                add_jobname(task_settings)
-
-
-    # Add jobname entry to each remaining task
-#    add_jobname(workflow_config["tasks"])
-
     # Update default config with the constants, the machine config, and
     # then the user_config
 
@@ -286,15 +264,17 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
     for cfg in [workflow_config,machine_cfg,cfg_u]:
         cfg_d.update_values(cfg)
 
-
     cfg_d.dereference()
-
 
     # Do any conversions of data types
     for sect, settings in cfg_d.items():
         for k, v in settings.items():
             if not (v is None or v == "") and isinstance(v, str):
                 cfg_d[sect][k] = str_to_list(v)
+
+    # Add special variables for date/times that bash can handle
+    cfg_d["hafs"]["DATE_FIRST_CYCL_YYYYMMDDHH"]=cfg_d["hafs"]["DATE_FIRST_CYCL"].strftime('%Y%m%d%H')
+    cfg_d["hafs"]["DATE_LAST_CYCL_YYYYMMDDHH"]=cfg_d["hafs"]["DATE_LAST_CYCL"].strftime('%Y%m%d%H')
 
     return cfg_d
 
@@ -429,4 +409,4 @@ if __name__ == "__main__":
     generate_vx_workflow(config)
 
     # If requested (via config settings), add vx workflow to crontab.
-    add_workflow_to_cron(pargs.mins,config,pargs.verbose)
+#    add_workflow_to_cron(pargs.mins,config,pargs.verbose)
