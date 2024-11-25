@@ -41,7 +41,7 @@ script_to_run="$2"
 # Load modules and refresh conda environment (in case user environment had a different one loaded)
 
 module use "${MODULESdir}"
-
+module load "vx_${machine}.lua"
 set +u
 conda deactivate
 conda activate hafs_vx
