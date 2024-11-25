@@ -57,7 +57,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_tcpairs.sh'
+        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_tcstat.sh'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'
@@ -76,4 +76,8 @@ rocoto:
         partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
         queue: '&QUEUE_DEFAULT;'
         walltime: 00:10:00
+        dependency:
+          taskdep:
+            attrs:
+              task: tcpairs
 

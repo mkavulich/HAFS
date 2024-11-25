@@ -56,7 +56,7 @@ user:
   MODULESdir: '{{ user.HOMEdir }}/modulefiles/met_vx'
   METPLUS_CONF: '{{ user.PARMdir }}/metplus'
   workflow_blocks:
-    - verify_pre.yaml
+    - verify_tc.yaml
 
 #----------------------------
 # PLATFORM config parameters
