@@ -23,8 +23,6 @@ rocoto:
       SCRIPTSdir: '{{ user.SCRIPTSdir }}'
       USHdir: '{{ user.USHdir }}'
       WORKFLOW_ID: '{{ workflow.WORKFLOW_ID }}'
-
-      FCST_DIR: '{{ workflow.EXPTDIR }}/@Y@m@d@H'
       LOGDIR: '{{ workflow.EXPTDIR }}/logs'
       LOGEXT: ".log"
     log: "&LOGDIR;/hafs_vx_wflow.log"
@@ -53,5 +51,29 @@ rocoto:
         nodes: '1:ppn=1'
         partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
         queue: '&QUEUE_DEFAULT;'
-        walltime: 00:30:00
+        walltime: 00:10:00
+      task_tcstat:
+        account: '&ACCOUNT;'
+        attrs:
+          cycledefs: forecast
+          maxtries: '1'
+        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_tcpairs.sh'
+        envars:
+          VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
+          USHdir: '&USHdir;'
+          START_DATE:
+            cyclestr:
+              value: '@Y@m@d@H'
+          LOGDIR:
+            cyclestr:
+              value: "&LOGDIR;"
+          METPLUSTOOLNAME: 'TCSTAT'
+          BEST_TRACK: '{{ platform.BEST_TRACK }}'
+        join:
+            cyclestr:
+              value: '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'
+        nodes: '1:ppn=1'
+        partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
+        queue: '&QUEUE_DEFAULT;'
+        walltime: 00:10:00
 
