@@ -14,7 +14,7 @@ done
 CONF_FILE='tcpairs.conf'
 
 # Set the input and output directories here
-INPUT_DIR=${CDNOSCRUB}/HAFS_rt_hfsa_dev_ww3/
+INPUT_DIR=${CDNOSCRUB}/${SUBEXPT}
 OUTPUT_DIR=${EXPTDIR}/${START_DATE}
 
 # Since TCPairs is set up to run once per cycle, the START_DATE will always equal the END_DATE

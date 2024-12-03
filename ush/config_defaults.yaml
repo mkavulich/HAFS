@@ -144,6 +144,7 @@ hafs:
   #
 
   CDNOSCRUB: ''
+  SUBEXPT: ''
   RUN: 'hfsa'
 
 #-----------------------------
