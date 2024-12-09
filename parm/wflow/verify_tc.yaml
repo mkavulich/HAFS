@@ -17,7 +17,6 @@ rocoto:
       VAR_DEFNS_FP: '{{ workflow.VAR_DEFNS_FP }}'
       HOMEdir: '{{ user.HOMEdir }}'
       LOAD_MODULES_RUN_TASK: '{{ workflow.LOAD_MODULES_RUN_TASK_FP }} {{ user.MACHINE }}'
-      NCORES_PER_NODE: '{{ platform.NCORES_PER_NODE }}'
       PARTITION_DEFAULT: '{{ platform.get("PARTITION_DEFAULT") }}'
       QUEUE_DEFAULT: '{{ platform.get("QUEUE_DEFAULT") }}'
       SCRIPTSdir: '{{ user.SCRIPTSdir }}'

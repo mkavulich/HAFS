@@ -4,7 +4,6 @@
 # Abstract:
 #   This script detects HAFS running platform and prepares module environment.
 ################################################################################
-set -x
 # Create a test function for sh vs. bash detection.  The name is
 # randomly generated to reduce the chances of name collision.
 __ms_function_name="setup__test_function__$$"

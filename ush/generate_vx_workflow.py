@@ -18,7 +18,6 @@ from textwrap import dedent
 
 import yaml
 
-from get_crontab_contents import add_crontab_line
 from python_utils import (
     check_structure_dict,
     check_for_preexist_dir_file,
@@ -26,7 +25,6 @@ from python_utils import (
     str_to_list,
 )
 
-import uwtools.api.template as uwtemplate
 import uwtools.api.config as uwconfig
 import uwtools.api.rocoto as uwrocoto
 
@@ -76,25 +74,6 @@ def generate_vx_workflow(vx_config):
         vx_xml_fn,
     )
 
-    # Customize the workflow launch script to include the necessary experiment-specific variables
-    wflow_launch_script_fp = vx_config["workflow"]["LAUNCH_SCRIPT_FP"]
-    wflow_launch_script_fn = vx_config["workflow"]["LAUNCH_SCRIPT_FN"]
-    with open(wflow_launch_script_fp, "r", encoding='utf-8') as launch_script_file:
-        launch_script_content = launch_script_file.read()
-
-    # Stage an experiment-specific launch file in the experiment directory
-    template = Template(launch_script_content)
-
-    # The script needs several variables from the workflow and user sections
-    template_variables = {**vx_config["user"], **vx_config["workflow"]}
-    launch_content =  template.safe_substitute(template_variables)
-
-    launch_fp = os.path.join(exptdir, wflow_launch_script_fn)
-    with open(launch_fp, "w", encoding='utf-8') as expt_launch_fn:
-        expt_launch_fn.write(launch_content)
-
-    os.chmod(launch_fp, os.stat(launch_fp).st_mode|S_IXUSR)
-
     # Link "source_yaml.sh" for use in bash scripts
     create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
 
@@ -114,26 +93,24 @@ def generate_vx_workflow(vx_config):
     # the user configuration file to the experiment directory.
     shutil.copy(os.path.join(vx_config["user"]["USHdir"], config["workflow"]["VX_CONFIG_FN"]), vx_config["workflow"]["EXPTDIR"])
 
+    logging.info(f"\nVerification workflow successfully created in {vx_config['workflow']['EXPTDIR']}")
+
     # For convenience, print out the commands that need to be issued on the
     # command line in order to launch the workflow and to check its status.
-    # Also, print out the line that should be placed in the user's cron table
-    # in order for the workflow to be continually resubmitted.
     wflow_db_fn = f"{os.path.splitext(vx_xml_fn)[0]}.db"
     rocotorun_cmd = f"rocotorun -w {vx_xml_fn} -d {wflow_db_fn} -v 10"
     rocotostat_cmd = f"rocotostat -w {vx_xml_fn} -d {wflow_db_fn} -v 10"
 
-    logging.info(
-            f"""
-            To launch the workflow, issue the rocotorun command, as follows:
+    logging.info(dedent(
+        f"""
+        To launch the workflow, enter the verification directory and issue the rocotorun command:
+          > cd {vx_config['workflow']['EXPTDIR']}
+          > rocotorun -w {vx_xml_fn} -d {wflow_db_fn} -v 10
 
-              > {rocotorun_cmd}
-
-            To check on the status of the workflow, issue the rocotostat command:
-
-              > {rocotostat_cmd}
-
-            """
-        )
+        To check on the status of the workflow, issue the rocotostat command:
+          > rocotostat -w {vx_xml_fn} -d {wflow_db_fn} -v 10
+        """
+    ))
 
     # If we got to this point everything was successful: move the log
     # file to the experiment directory.
@@ -319,28 +296,6 @@ def validate_config(config):
     return config
 
 
-def add_workflow_to_cron(mins,config,debug):
-    """
-    Adds the workflow launch script to crontab, so that the rocoto workflow will be advanced
-    automatically at the specified interval
-
-    Args:
-      mins     (int): Number of minutes between calls to script
-      config  (dict): Python dict of configuration settings from YAML files.
-      debug   (bool): Debug mode, run with additional output
-
-    Returns:
-      None
-    """
-
-    launch_script_fn = config["workflow"].get("LAUNCH_SCRIPT_FN")
-    launch_log_fn = config["workflow"].get("LAUNCH_LOG_FN")
-    exptdir = config["workflow"].get("EXPTDIR")
-    crontab_line = (f"""*/{mins} * * * * cd {exptdir} && ./{launch_script_fn} -c >> ./{launch_log_fn} 2>&1"""
-    )
-
-    add_crontab_line(called_from_cron=False,crontab_line=crontab_line,exptdir=exptdir,debug=debug)
-
 def setup_logging(logfile: str = "log.generate_hafs_vx_workflow", debug: bool = False) -> None:
     """
     Sets up logging, printing high-priority (INFO and higher) messages to screen, and printing all
@@ -380,10 +335,6 @@ if __name__ == "__main__":
                         help='File name for user configuration file')
     parser.add_argument('-m', '--machine_config', type=str, default='',
                         help='File name for machine configuration file')
-    parser.add_argument('-c', '--crontab_launch', action='store_true',
-                        help= 'Add verification workflow to crontab for automatic task submission')
-    parser.add_argument('--mins', type=int, default=5,
-                        help='If adding workflow to crontab, the interval in minutes between calls')
 
     pargs = parser.parse_args()
 
@@ -404,5 +355,3 @@ if __name__ == "__main__":
     # Generate experiment files
     generate_vx_workflow(config)
 
-    # If requested (via config settings), add vx workflow to crontab.
-#    add_workflow_to_cron(pargs.mins,config,pargs.verbose)
