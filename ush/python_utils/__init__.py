@@ -4,4 +4,3 @@ from .config_parser import (
 )
 from .create_symlink import create_symlink
 from .environment import str_to_list
-from .run_command import run_command

@@ -65,13 +65,6 @@ platform:
   #
   #-----------------------------------------------------------------------
   #
-  # NCORES_PER_NODE:
-  # The number of cores available per node on the compute platform, now 
-  # configurable for all platforms.
-  #
-  # TASKTHROTTLE:
-  # The number of active tasks run simultaneously.
-  #
   # MODULEFILE
   # Filename for the module file to load. Is set automatically for supported machines.
   #
@@ -93,8 +86,6 @@ platform:
   # dependent value.
   #-----------------------------------------------------------------------
   #
-  NCORES_PER_NODE: ""
-  TASKTHROTTLE: 1000
   MODULEFILE: 'vx_{{ user.MACHINE|lower }}'
   SCHED: ""
   PARTITION_DEFAULT: ""
@@ -116,14 +107,14 @@ hafs:
   # FCST_LEN_HRS:
   # The length of each forecast, in integer hours.
   #
-  # NOUTHRS:
-  # Interval in hours of the atmospheric model output
+  # OUTPUT_INC:
+  # Interval in seconds between the atmospheric model output times
 
   DATE_FIRST_CYCL: !!timestamp '1900-01-01 12:00:00'
   DATE_LAST_CYCL: !!timestamp '1900-01-01 12:00:00'
   CYCL_FREQ: 24
   FCST_LEN_HRS: 24
-  NOUTHRS: 6
+  OUTPUT_INC: 3600
 
   # More information on the following settings can be found in the documentation for Automated
   # Tropical Cyclone Forecast Data/Text Files: https://ftp.nhc.noaa.gov/atcf/README
@@ -163,8 +154,6 @@ workflow:
   #
   #
   #-----------------------------------------------------------------------
-  #
-  # Set cron-associated parameters.  Definitions:
   #
   # LOAD_MODULES_RUN_TASK_FP: 
   # Path to load_modules_run_task.sh.
@@ -234,46 +223,19 @@ workflow:
   # in VX_CONFIG_FN. This file will be read by all verification tasks as the sole
   # source of variable definitions
   #
-  # LAUNCH_SCRIPT_FN:
-  # Name of the script that can be used to (re)launch the experiment's rocoto
-  # workflow.
-  #
-  # LAUNCH_LOG_FN:
-  # Name of the log file that contains the output from successive calls to
-  # the workflow launch script (LAUNCH_SCRIPT_FN).
-  #
   # VAR_DEFNS_FP: 
   # Path to the location of the variable definition file (VAR_DEFNS_FN).
   #
-  # LAUNCH_SCRIPT_FP:
-  # Path to the workflow launch script 
-  # (LAUNCH_SCRIPT_FN) in the experiment directory. 
-  #
-  # LAUNCH_LOG_FP: 
-  # Path to the log file (LAUNCH_LOG_FN) in 
-  # the experiment directory that contains output from successive 
-  # calls to the workflow launch script. 
-  # 
   #-----------------------------------------------------------------------
   #
   VX_XML_FN: "hafs_vx.xml"
   VAR_DEFNS_FN: "var_defns.yaml"
-  LAUNCH_SCRIPT_FN: "launch_hafs_vx_wflow.sh"
-  LAUNCH_LOG_FN: "log.launch_hafs_vx_wflow"
-
   VAR_DEFNS_FP: '{{ workflow.EXPTDIR }}/{{ workflow.VAR_DEFNS_FN }}'
-  LAUNCH_SCRIPT_FP: '{{ user.USHdir }}/{{ workflow.LAUNCH_SCRIPT_FN }}'
-  LAUNCH_LOG_FP: '{{ workflow.EXPTDIR }}/{{ workflow.LAUNCH_LOG_FN }}'
 
 #----------------------------
 # verification (vx) parameters
 #-----------------------------
 verification:
-  #
-  # METPLUS_VERBOSITY_LEVEL: 
-  # Logging verbosity level used by METplus verification tools. 0 to 5, with 0 quiet and 5 loud.
-  # 
-  METPLUS_VERBOSITY_LEVEL: 2
   #
   # TECH_ID:
   # The identifier for the forecast data to use for TCPAIRS comparison, as read in from the
@@ -315,7 +277,13 @@ verification:
   # LOG_LEVEL
   # Python logging level for METplus wrappers. Details here:
   # https://metplus.readthedocs.io/en/latest/Users_Guide/systemconfiguration.html#log-level
-  
+  #
+  # METPLUS_VERBOSITY_LEVEL: 
+  # Logging verbosity level used by METplus verification tools.  0 to 9,
+  # with 0 having the fewest log messages and 9 having the most. Levels 5
+  # and above can result in very large log files and slower tool execution.
+  # 
+  METPLUS_VERBOSITY_LEVEL: 2
   LOG_MET_VERBOSITY: 2
   LOG_LEVEL: INFO
 

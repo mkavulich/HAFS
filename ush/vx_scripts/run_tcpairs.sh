@@ -19,7 +19,7 @@ OUTPUT_DIR=${EXPTDIR}/${START_DATE}
 
 # Since TCPairs is set up to run once per cycle, the START_DATE will always equal the END_DATE
 END_DATE=${START_DATE}
-INC=3600
+INC=${OUTPUT_INC}
 #MODEL='OFCL'
 
 # We need to know if this is a HAFS-A or HAFS-B run; this comes from the HAFS "RUN" variable (how wonderfully descriptive)
