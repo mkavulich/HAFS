@@ -3,3 +3,4 @@ platform:
   SCHED: slurm
   PARTITION_DEFAULT: hera
   QUEUE_DEFAULT: batch
+  BEST_TRACK: /scratch1/NCEPDEV/hwrf/noscrub/input/abdeck/btk
