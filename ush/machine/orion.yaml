@@ -1,0 +1,6 @@
+platform:
+  WORKFLOW_MANAGER: rocoto
+  SCHED: slurm
+  PARTITION_DEFAULT: orion
+  QUEUE_DEFAULT: batch
+  BEST_TRACK: /work/noaa/hwrf/noscrub/input/abdeck/btk
