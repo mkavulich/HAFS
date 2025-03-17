@@ -32,7 +32,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_tcpairs.sh'
+        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_metplus.sh'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'
@@ -58,7 +58,7 @@ rocoto:
         attrs:
           cycledefs: forecast
           maxtries: '1'
-        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_tcstat.sh'
+        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_metplus.sh'
         envars:
           VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
           USHdir: '&USHdir;'
@@ -82,4 +82,29 @@ rocoto:
           taskdep:
             attrs:
               task: tcpairs
+      task_tcrmw:
+        account: '&ACCOUNT;'
+        attrs:
+          cycledefs: forecast
+          maxtries: '1'
+        command: '&LOAD_MODULES_RUN_TASK; &SCRIPTSdir;/run_metplus.sh'
+        envars:
+          VAR_DEFNS_FP: '&VAR_DEFNS_FP;'
+          USHdir: '&USHdir;'
+          START_DATE:
+            cyclestr:
+              value: '@Y@m@d@H'
+          LOGDIR:
+            cyclestr:
+              value: "&LOGDIR;"
+          METPLUSTOOLNAME: 'TCRMW'
+          BEST_TRACK: '{{ platform.BEST_TRACK }}'
+          MODULESdir: '&MODULESdir;'
+        join:
+            cyclestr:
+              value: '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'
+        nodes: '1:ppn=1'
+        partition: '{% if platform.get("PARTITION_DEFAULT") %}&PARTITION_DEFAULT;{% else %}None{% endif %}'
+        queue: '&QUEUE_DEFAULT;'
+        walltime: 00:10:00
 

@@ -114,7 +114,7 @@ hafs:
   DATE_LAST_CYCL: !!timestamp '1900-01-01 12:00:00'
   CYCL_FREQ: 24
   FCST_LEN_HRS: 24
-  OUTPUT_INC: 3600
+  OUTPUT_INC: 10800
 
   # More information on the following settings can be found in the documentation for Automated
   # Tropical Cyclone Forecast Data/Text Files: https://ftp.nhc.noaa.gov/atcf/README
@@ -138,6 +138,11 @@ hafs:
   SUBEXPT: ''
   RUN: 'hfsa'
 
+  # Settings related to the full 3d model output
+  #
+
+  VX_FCST_INPUT_BASEDIR: ''
+  FCST_FN_TEMPLATE: ''
 #-----------------------------
 # WORKFLOW config parameters
 #-----------------------------
