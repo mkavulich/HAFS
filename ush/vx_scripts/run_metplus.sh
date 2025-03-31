@@ -25,8 +25,6 @@ CONF_FILE="${METPLUSTOOLNAME}.conf"
 INPUT_DIR=${CDNOSCRUB}/${SUBEXPT}
 OUTPUT_DIR=${EXPTDIR}/${START_DATE}
 
-# Since tasks are set up to run once per cycle, the START_DATE will always equal the END_DATE
-END_DATE=${START_DATE}
 OUTPUT_INC_HR=$(($OUTPUT_INC / 3600))
 
 # Format for A-deck forecast track file
@@ -36,25 +34,44 @@ ADECK_TEMPLATE="${STORM_ID}l.{init?fmt=%Y%m%d%H}.hfsa.trak.atcfunix"
 # The carets (^^) make the string all-caps
 MODEL=${RUN^^}
 
-# Export the variables needed for conf files
-export INPUT_DIR
-export OUTPUT_DIR
-export START_DATE
-export FCST_LEN_HRS
-export OUTPUT_INC_HR
-export BASIN
-export STORM_ID
-export ADECK_TEMPLATE
-export BEST_TRACK
-export LOG_MET_VERBOSITY
-export LOG_LEVEL
-export MODEL
-export FORECAST_DIR
-export VX_FCST_INPUT_BASEDIR
-export FCST_FN_TEMPLATE
+# Settings to substitute in METplus conf templates
+settings="\
+  'input_dir': '${INPUT_DIR:-}'
+  'output_dir': '${OUTPUT_DIR:-}'
+  'start_date': '${START_DATE:-}'
+  'fcst_len_hrs': '${FCST_LEN_HRS:-}'
+  'output_inc_hr': '${OUTPUT_INC_HR:-}'
+  'basin': '${BASIN:-}'
+  'storm_id': '${STORM_ID:-}'
+  'adeck_template': '${ADECK_TEMPLATE:-}'
+  'best_track': '${BEST_TRACK:-}'
+  'log_met_verbosity': '${LOG_MET_VERBOSITY:-}'
+  'log_level': '${LOG_LEVEL:-}'
+  'model': '${MODEL:-}'
+  'forecast_dir': '${FORECAST_DIR:-}'
+  'vx_fcst_input_basedir': '${VX_FCST_INPUT_BASEDIR:-}'
+  'fcst_fn_template': '${FCST_FN_TEMPLATE:-}'
+"
+
+# Render METplus conf file from template with uwtools
+tmpfile=$( readlink -f "$(mktemp ./met_plus_settings.XXXXXX.yaml)")
+printf "%s" "$settings" > "$tmpfile"
+uw template render \
+  -i ${SCRIPTSdir}/${CONF_FILE} \
+  -o ${OUTPUT_DIR}/${CONF_FILE} \
+  --verbose \
+  --values-file "${tmpfile}" \
+  --search-path "/"
+
+err=$?
+rm $tmpfile
+if [ $err -ne 0 ]; then
+  echo "Error rendering template for METplus config. Contents of input are:"
+  echo "$settings"
+fi
 
 # Create experiment dir and run specified metplus tool
 mkdir -p ${OUTPUT_DIR}/${METPLUSTOOLNAME}
 cd ${OUTPUT_DIR}/${METPLUSTOOLNAME}
 
-python ${METPLUS_ROOT}/ush/run_metplus.py -c ${SCRIPTSdir}/${CONF_FILE}
+python ${METPLUS_ROOT}/ush/run_metplus.py -c ${OUTPUT_DIR}/${CONF_FILE}
