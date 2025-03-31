@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
-  
 """
 User interface to create a workflow xml for running METplus verification tasks
 """
 
 import argparse
-import copy
 import logging
 import os
 import shutil
 import sys
 
 from pathlib import Path
-from stat import S_IXUSR
-from string import Template
 from textwrap import dedent
-
-import yaml
 
 from python_utils import (
     check_structure_dict,
@@ -38,24 +32,24 @@ def generate_vx_workflow(vx_config):
     """
 
     # First of all, expand experiment directory if necessary, then create path
-    vx_config["workflow"].update({ "EXPTDIR": os.path.abspath(vx_config["workflow"].get("EXPTDIR")) })
+    vx_config["workflow"].update({"EXPTDIR": os.path.abspath(vx_config["workflow"].get("EXPTDIR"))})
     exptdir = vx_config["workflow"].get("EXPTDIR")
-    preexisting_dir_method = vx_config["workflow"].get("PREEXISTING_DIR_METHOD")
+    preexist_dir_method = vx_config["workflow"].get("PREEXISTING_DIR_METHOD")
     try:
-        check_for_preexist_dir_file(exptdir, preexisting_dir_method)
+        check_for_preexist_dir_file(exptdir, preexist_dir_method)
     except ValueError:
-        logger.exception(
+        logging.exception(
             f"""
             Check that the following values are valid:
             EXPTDIR {exptdir}
-            PREEXISTING_DIR_METHOD {preexisting_dir_method}
+            PREEXISTING_DIR_METHOD {preexist_dir_method}
             """
         )
         raise
     except FileExistsError:
         errmsg = dedent(
             f"""
-            EXPTDIR ({exptdir}) already exists, and PREEXISTING_DIR_METHOD = {preexisting_dir_method}
+            EXPTDIR ({exptdir}) already exists, and PREEXISTING_DIR_METHOD = {preexist_dir_method}
 
             To ignore this error, delete the directory, or set 
             PREEXISTING_DIR_METHOD = delete, or
@@ -67,15 +61,12 @@ def generate_vx_workflow(vx_config):
 
     os.mkdir(exptdir)
 
-    # Set the full path to the rocoto workflow xml file for verification. 
+    # Set the full path to the rocoto workflow xml file for verification.
     vx_xml_fn = vx_config["workflow"]["VX_XML_FN"]
-    vx_xml_fp = os.path.join(
-        vx_config["workflow"]["EXPTDIR"],
-        vx_xml_fn,
-    )
+    vx_xml_fp = os.path.join(exptdir,vx_xml_fn,)
 
     # Link "source_yaml.sh" for use in bash scripts
-    create_symlink(os.path.join(vx_config["user"]["USHdir"], "bash_utils", "source_yaml.sh"), exptdir)
+    create_symlink(os.path.join(vx_config["user"]["USHdir"],"bash_utils","source_yaml.sh"), exptdir)
 
     # Expand all references to other variables and populate jinja templates
     vx_config.dereference()
@@ -91,20 +82,19 @@ def generate_vx_workflow(vx_config):
 
     # To have a record of how this experiment/workflow was generated, copy
     # the user configuration file to the experiment directory.
-    shutil.copy(os.path.join(vx_config["user"]["USHdir"], config["workflow"]["VX_CONFIG_FN"]), vx_config["workflow"]["EXPTDIR"])
+    shutil.copy(os.path.join(vx_config["user"]["USHdir"], config["workflow"]["VX_CONFIG_FN"]),
+                exptdir)
 
-    logging.info(f"\nVerification workflow successfully created in {vx_config['workflow']['EXPTDIR']}")
+    logging.info(f"\nVerification workflow successfully created in {exptdir}")
 
     # For convenience, print out the commands that need to be issued on the
     # command line in order to launch the workflow and to check its status.
     wflow_db_fn = f"{os.path.splitext(vx_xml_fn)[0]}.db"
-    rocotorun_cmd = f"rocotorun -w {vx_xml_fn} -d {wflow_db_fn} -v 10"
-    rocotostat_cmd = f"rocotostat -w {vx_xml_fn} -d {wflow_db_fn} -v 10"
 
     logging.info(dedent(
         f"""
         To launch the workflow, enter the verification directory and issue the rocotorun command:
-          > cd {vx_config['workflow']['EXPTDIR']}
+          > cd {exptdir}
           > rocotorun -w {vx_xml_fn} -d {wflow_db_fn} -v 10
 
         To check on the status of the workflow, issue the rocotostat command:
@@ -114,13 +104,13 @@ def generate_vx_workflow(vx_config):
 
     # If we got to this point everything was successful: move the log
     # file to the experiment directory.
-#    os.rename(logfile, vx_config["workflow"]["EXPTDIR"])
+#    os.rename(logfile, exptdir)
 
 
 def load_config_populate_dict(homedir, default_config, user_config, machine_config):
     """Load in the default, machine, and user configuration files into
-    Python dictionaries. Return the combined workflow dictionary. If duplicate values are encountered,
-    duplicates are treated in priority of user config > machine config > default config
+    Python dictionaries. Return the combined workflow dictionary. If duplicate values are
+    encountered, duplicates are treated in priority of user config > machine config > default config
 
     Args:
       homedir            (str): Path to the top-level HAFS directory
@@ -137,7 +127,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
     # Load the default config.
     logging.debug(f"Loading config defaults file {default_config}")
     cfg_d = uwconfig.get_yaml_config(default_config)
-    logging.debug(f"Read in the following values from config defaults file:\n")
+    logging.debug("Read in the following values from config defaults file:\n")
     logging.debug(cfg_d)
 
     # Set "Home" directory, the top-level HAFS directory, and "ush" directory
@@ -174,7 +164,7 @@ def load_config_populate_dict(homedir, default_config, user_config, machine_conf
 
     # Task and metatask entries can be added arbitrarily under the
     # rocoto section. Remove those from invalid if they exist
-    for key in invalid.copy().keys():
+    for key in invalid.copy():
         if key.split("_", maxsplit=1)[0] in ["task", "metatask"]:
             invalid.pop(key)
             logging.info(f"Found and allowing key {key}")
@@ -272,8 +262,8 @@ def validate_config(config):
     for subkey, subdict in cfg_v.items():
         if config.get(subkey) and cfg_v.get(subkey):
             for k, v in subdict.items():
-                if (k in config[subkey]):
-                    if (type(v) == list):
+                if k in config[subkey]:
+                    if type(v) == list:
                         # convert list values to lowercase
                         complist = [x.casefold() for x in v]
                         if config[subkey][k].casefold() not in complist:
@@ -305,10 +295,10 @@ def setup_logging(logfile: str = "log.generate_hafs_vx_workflow", debug: bool = 
 
     formatter = logging.Formatter("%(name)-16s %(levelname)-8s %(message)s")
 
-    fh = logging.FileHandler(logfile, mode='a')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logging.getLogger().addHandler(fh)
+    flh = logging.FileHandler(logfile, mode='a')
+    flh.setLevel(logging.DEBUG)
+    flh.setFormatter(formatter)
+    logging.getLogger().addHandler(flh)
 
     logging.debug(f"Finished setting up debug file logging in {logfile}")
     console = logging.StreamHandler()
@@ -342,12 +332,13 @@ if __name__ == "__main__":
     homedir = os.path.abspath(os.path.dirname(__file__) + os.sep + os.pardir)
 
     # Setup logging
-    logfile = f"{homedir}/ush/log.generate_vx_wflow"
-    setup_logging(logfile, pargs.verbose)
+    log = f"{homedir}/ush/log.generate_vx_wflow"
+    setup_logging(log, pargs.verbose)
 
 
     # Read default config, user config, and machine file to populate the vx workflow directory
-    config = load_config_populate_dict(homedir, pargs.default_config, pargs.user_config, pargs.machine_config)
+    config = load_config_populate_dict(homedir, pargs.default_config,
+                                       pargs.user_config, pargs.machine_config)
 
     # Check for invalid config settings
     config = validate_config(config)
