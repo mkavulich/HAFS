@@ -23,9 +23,12 @@ CONF_FILE="${METPLUSTOOLNAME}.conf"
 
 # Set the input and output directories here
 INPUT_DIR=${CDNOSCRUB}/${SUBEXPT}
-OUTPUT_DIR=${EXPTDIR}/${START_DATE}
+OUTPUT_DIR=${EXPTDIR}/${START_DATE}/${METPLUSTOOLNAME}
 
 OUTPUT_INC_HR=$(($OUTPUT_INC / 3600))
+
+# Create experiment dir
+mkdir -p ${OUTPUT_DIR}/
 
 # Format for A-deck forecast track file
 ADECK_TEMPLATE="${STORM_ID}l.{init?fmt=%Y%m%d%H}.hfsa.trak.atcfunix"
@@ -36,6 +39,7 @@ MODEL=${RUN^^}
 
 # Settings to substitute in METplus conf templates
 settings="\
+  'exptdir': '${EXPTDIR}'
   'input_dir': '${INPUT_DIR:-}'
   'output_dir': '${OUTPUT_DIR:-}'
   'start_date': '${START_DATE:-}'
@@ -71,7 +75,6 @@ if [ $err -ne 0 ]; then
 fi
 
 # Create experiment dir and run specified metplus tool
-mkdir -p ${OUTPUT_DIR}/${METPLUSTOOLNAME}
-cd ${OUTPUT_DIR}/${METPLUSTOOLNAME}
+cd ${OUTPUT_DIR}
 
-python ${METPLUS_ROOT}/ush/run_metplus.py -c ${OUTPUT_DIR}/${CONF_FILE}
+python ${METPLUS_ROOT}/ush/run_metplus.py -c ${SCRIPTSdir}/common.conf -c ${OUTPUT_DIR}/${CONF_FILE}
